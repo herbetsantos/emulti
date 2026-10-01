@@ -1,317 +1,201 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Olhar eMulti</title>
-<link rel="icon" href="assets/favicon.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<style>
-:root{--primary:#203b8f;--primary-dark:#152a68;--accent:#1c9c76;--accent-dark:#157b5d;--ink:#1b2340;--muted:#5b6480;--soft:#5b6480;--line:#dde3f0;--surface:#f4f6fb;--bg:#f2f4f7;--danger:#c0392b;
---shadow-lg:0 12px 32px rgba(21,42,104,.16);--app-topbar-h:66px;--side-w:70px;--side-w-open:238px;--side-ink:#173e72;--side-hover:#eef5fb}
-*{box-sizing:border-box}
-html,body{margin:0;background:var(--bg);color:var(--ink);font:400 15px/1.45 Montserrat,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;-webkit-font-smoothing:antialiased}
-h1,h2,h3{margin:0}
-button{font:inherit;font-weight:700;border:0;border-radius:8px;padding:10px 18px;cursor:pointer;transition:background .15s ease}
-button:active{transform:translateY(1px)}button[disabled]{opacity:.55;cursor:not-allowed}
-:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
-.primary{background:var(--accent);color:#fff}.primary:hover{background:var(--accent-dark)}
-.ghost{background:#fff;color:var(--primary);border:1.5px solid var(--line)}.ghost:hover{border-color:var(--primary)}
-.field{margin-bottom:16px}.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-label{display:block;font-size:13px;font-weight:700;color:var(--ink);margin-bottom:6px}
-input,select,textarea{width:100%;padding:11px 13px;border:1.5px solid var(--line);border-radius:8px;font:inherit;font-size:14.5px;color:var(--ink);background:#fff}
-input:focus,select:focus,textarea:focus{border-color:var(--primary);outline:none;box-shadow:0 0 0 3px rgba(32,59,143,.14)}
-.hidden{display:none!important}
-.err{background:#fdece9;color:var(--danger);padding:10px 12px;border-radius:8px;font-size:13.5px;margin-bottom:14px}
-/* Login */
-#login{position:relative;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#fff;padding:24px;overflow:hidden}
-#netBg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
-.login-layout{position:relative;z-index:1;width:100%;max-width:1080px;display:flex;align-items:center;justify-content:space-between;gap:64px;padding:0 24px}
-.login-hero{flex:1;min-width:0;max-width:520px}
-.login-hero h1{font-size:40px;font-weight:800;line-height:1.15;letter-spacing:-.01em;color:var(--primary-dark);margin-bottom:16px}
-.login-hero p{font-size:17px;line-height:1.55;color:var(--muted);max-width:46ch;margin:0}
-.box{position:relative;z-index:1;width:100%;max-width:380px;flex-shrink:0;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow-lg);padding:32px 30px 28px}
-.box .logo{display:flex;justify-content:center;margin-bottom:18px}
-.box .logo span{background:var(--primary);border-radius:12px;padding:10px 18px;display:flex}
-.box .logo img{height:58px;width:auto;display:block}
-.box .produto{text-align:center;font-size:20px;font-weight:800;color:var(--primary-dark);margin-bottom:4px}
-.box .sub{text-align:center;color:var(--muted);font-size:12.5px;line-height:1.5;margin-bottom:22px}
-.pw{position:relative}.pw input{padding-right:76px}
-.pw button{position:absolute;right:6px;top:50%;transform:translateY(-50%);background:transparent;color:var(--primary);font-size:11px;padding:7px}
-.box .entrar{width:100%;padding:12px;font-size:15px}.box .entrar[disabled]{cursor:wait}
-.divider{display:flex;align-items:center;gap:10px;margin:17px 0;color:var(--muted);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em}
-.divider:before,.divider:after{content:"";height:1px;background:var(--line);flex:1}
-.portal-access{width:100%;min-height:44px;border:1.5px solid var(--line);background:#fff;color:var(--primary);border-radius:8px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:13px}
-.portal-access:hover{border-color:var(--primary);background:var(--surface)}
-.portal-access svg{width:17px;height:17px;stroke:currentColor;fill:none}
-.box .nota{text-align:center;color:var(--muted);font-size:11px;line-height:1.5;margin-top:16px}
-@media(max-width:860px){.login-layout{flex-direction:column;text-align:center;gap:32px}.login-hero{max-width:100%}.login-hero h1{font-size:28px}.login-hero p{margin:0 auto}}
-/* Barra superior */
-.app-topbar{position:fixed;inset:0 0 auto 0;height:var(--app-topbar-h);z-index:220;background:var(--primary);display:flex;align-items:center;justify-content:space-between;padding:0 26px 0 20px}
-.app-brand{display:flex;align-items:center;gap:10px;height:54px;color:#fff;text-decoration:none}
-.app-brand img{height:46px;width:auto}
-.app-brand__text{display:flex;align-items:center;gap:10px;font-size:17px;letter-spacing:-.02em;white-space:nowrap}
-.app-brand__text strong{font-size:22px;font-weight:800}.app-brand__text>span:last-child{font-weight:600}
-.app-brand__divider{width:1px;height:24px;background:rgba(255,255,255,.28)}
-.account-wrap{position:relative}
-.account-button{background:transparent;color:#fff;display:flex;align-items:center;gap:14px;padding:7px 8px 7px 14px;border-radius:7px;text-align:right;font-weight:400}
-.account-button:hover,.account-button[aria-expanded=true]{background:rgba(255,255,255,.1)}
-.account-button__identity{display:flex;flex-direction:column;gap:2px;min-width:180px;max-width:340px}
-.account-button__identity strong{font-size:13px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.account-button__identity small{font-size:11px;font-weight:600;opacity:.94;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.account-button__chevron{font-size:20px;line-height:1;transform:translateY(-2px)}
-.account-menu{position:absolute;right:0;top:calc(100% + 8px);min-width:230px;padding:7px;border-radius:10px;background:#fff;border:1px solid var(--line);box-shadow:var(--shadow-lg);z-index:260}
-.account-menu button{width:100%;display:flex;align-items:center;gap:10px;padding:10px 11px;border-radius:7px;background:transparent;color:var(--ink);font-size:13.5px;font-weight:600;text-align:left}
-.account-menu button:hover{background:var(--surface);color:var(--primary)}
-.account-menu svg,.side-nav__icon svg{fill:none;stroke:currentColor;stroke-linecap:round;stroke-linejoin:round}
-.account-menu svg{width:18px;height:18px;stroke-width:1.9}
-/* Menu lateral */
-.side-nav{position:fixed;z-index:210;left:0;top:var(--app-topbar-h);bottom:0;width:var(--side-w);background:#fff;border-right:1px solid #dbe3ec;box-shadow:2px 0 10px rgba(20,44,80,.045);display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;transition:width .18s ease}
-.side-nav:hover,.side-nav:focus-within,.side-nav.is-pinned-open{width:var(--side-w-open)}
-.side-nav__toggle{margin:10px 9px 0;width:42px;height:36px;padding:0;background:transparent;color:var(--side-ink);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:400}
-.side-nav__toggle:hover{background:var(--side-hover)}
-.side-nav__items{padding:14px 9px;display:flex;flex-direction:column;gap:6px}
-.side-nav__bottom{padding:10px 9px 16px;border-top:1px solid rgba(23,62,114,.12)}
-.side-nav__item{min-height:48px;width:100%;border-radius:9px;background:transparent;color:var(--side-ink);display:flex;align-items:center;gap:12px;padding:8px 11px;white-space:nowrap;text-align:left;font-weight:400}
-.side-nav__item:hover{background:var(--side-hover)}.side-nav__item.is-active{background:#dcecf8;color:#0f4f91}
-.side-nav__icon{width:30px;height:30px;flex:0 0 30px;display:inline-flex;align-items:center;justify-content:center}
-.side-nav__icon svg{width:22px;height:22px;stroke-width:1.8}
-.side-nav__label{opacity:0;transform:translateX(-5px);transition:opacity .12s ease .02s,transform .15s ease;font-size:13.5px;font-weight:700}
-.side-nav:hover .side-nav__label,.side-nav:focus-within .side-nav__label,.side-nav.is-pinned-open .side-nav__label{opacity:1;transform:none}
-/* Página */
-.page{margin:0 0 0 var(--side-w);padding:calc(var(--app-topbar-h) + 34px) 38px 70px}
-.page>*{max-width:1380px;margin-left:auto;margin-right:auto}
-.page__head{display:flex;justify-content:space-between;align-items:flex-end;gap:18px;flex-wrap:wrap;margin-bottom:24px}
-.eyebrow{color:var(--accent-dark);font-weight:700;font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px}
-.page__title{font-size:28px;font-weight:800;color:var(--primary-dark)}
-.page__subtitle{color:var(--muted);margin:8px 0 0;font-size:15px}
-.panel{background:#fff;border:1px solid var(--line);border-radius:12px;padding:6px 10px}
-.table-wrap{width:100%;overflow-x:auto}
-table.data-table{width:100%;border-collapse:collapse;font-size:14px;min-width:720px}
-.data-table th{text-align:left;color:var(--muted);font-weight:700;font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;padding:10px 12px;border-bottom:1.5px solid var(--line)}
-.data-table td{padding:14px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
-.data-table tr:last-child td{border-bottom:0}
-.data-table tbody tr[data-id]{cursor:pointer}.data-table tbody tr[data-id]:hover{background:var(--surface)}
-.badge,.pri{display:inline-flex;align-items:center;padding:3px 9px;border-radius:999px;font-size:11.5px;font-weight:700}
-.pri{justify-content:center;min-width:28px;height:28px;padding:0;border-radius:50%;font-size:13px;background:#e6ecfa;color:var(--primary)}.help{position:relative;display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;margin-left:6px;border-radius:50%;background:#e6ecfa;color:var(--primary);font-size:11px;font-weight:800;cursor:help;vertical-align:middle;text-transform:none;letter-spacing:0}.help::after{content:attr(data-tip);position:absolute;left:50%;top:calc(100% + 8px);transform:translateX(-30%);width:220px;padding:8px 10px;border-radius:8px;background:#1b2a5e;color:#fff;font-size:12px;font-weight:500;line-height:1.4;text-align:left;white-space:normal;opacity:0;visibility:hidden;transition:opacity .12s;z-index:50;pointer-events:none}.help:hover::after,.help:focus::after{opacity:1;visibility:visible}
-.badge--user{background:var(--surface);color:var(--muted)}
-/* Janela (modal) */
-dialog{border:0;border-radius:12px;padding:24px;width:min(580px,94vw);max-height:90vh;box-shadow:var(--shadow-lg);color:var(--ink)}
-dialog::backdrop{background:rgba(21,42,104,.45)}
-dialog h2{font-size:16.5px;font-weight:700;color:var(--primary-dark)}
-.actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}
-@media(max-width:760px){:root{--side-w:58px}.row{grid-template-columns:1fr}.app-topbar{padding:0 14px}.page{padding:calc(var(--app-topbar-h) + 24px) 16px 60px}.account-button__identity{min-width:0;max-width:130px}.app-brand__text{font-size:15px}.app-brand__text strong{font-size:18px}}
-@media(prefers-reduced-motion:reduce){.side-nav,.side-nav__label{transition:none}}
-</style>
-</head>
-<body>
+import { Hono } from 'hono';
+import { sign, verify } from 'hono/jwt';
 
-<div id="login">
-  <canvas id="netBg" aria-hidden="true"></canvas>
-  <div class="login-layout">
-    <div class="login-hero">
-      <h1>Bem-vindo ao Olhar eMulti</h1>
-      <p>Acompanhamento das guias de encaminhamento e dos grupos de atendimento eMulti, em um ambiente integrado à rede municipal de saúde.</p>
-    </div>
-    <form class="box" id="fLogin">
-      <div class="logo"><span><img src="assets/imagotipo-branco.png" alt="Brasão do município"></span></div>
-      <div class="produto">Olhar eMulti</div>
-      <div class="sub">Acesso restrito a profissionais autorizados</div>
-      <div id="loginErr" class="err hidden" role="alert"></div>
-      <div class="field"><label for="lu">Usuário</label><input id="lu" autocomplete="username" spellcheck="false" required autofocus></div>
-      <div class="field"><label for="ls">Senha</label><div class="pw"><input id="ls" type="password" autocomplete="current-password" required><button type="button" id="verSenha" aria-label="Mostrar senha">Mostrar</button></div></div>
-      <button class="primary entrar" id="btnEntrar">Entrar</button>
-      <div class="divider"><span>ou</span></div>
-      <button type="button" class="portal-access" id="portalBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11 12 4l9 7M5 10v10h14V10M9 20v-6h6v6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Acessar com Apoio APS</span></button>
-      <div class="nota">O login do Apoio APS é usado somente para autenticação. Os dados das guias ficam no ambiente próprio do Olhar eMulti.<br>Os dados dos pacientes são de uso exclusivo dos profissionais da rede.</div>
-    </form>
-  </div>
-</div>
+const STATUS = ['Aguardando grupo', 'Em atendimento', 'Pausado', 'Encerrado'];
+const app = new Hono();
 
-<div id="app" class="hidden">
-  <header class="app-topbar">
-    <a class="app-brand" href="/" aria-label="Olhar eMulti"><img src="assets/imagotipo-branco.png" alt="Brasão do município"><span class="app-brand__text"><strong>Olhar</strong><span class="app-brand__divider" aria-hidden="true"></span><span>eMulti</span></span></a>
-    <div class="account-wrap">
-      <button class="account-button" id="accountButton" type="button" aria-haspopup="true" aria-expanded="false">
-        <span class="account-button__identity"><strong id="whoName"></strong><small id="whoRole"></small></span><span class="account-button__chevron">⌄</span>
-      </button>
-      <div class="account-menu hidden" id="accountMenu"><button type="button" data-sair><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 17l5-5-5-5M15 12H3M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/></svg><span>Sair</span></button></div>
-    </div>
-  </header>
-  <aside class="side-nav" id="sideNav" aria-label="Menu principal">
-    <div>
-      <button class="side-nav__toggle" id="sideNavToggle" type="button" aria-label="Expandir ou recolher menu">☰</button>
-      <div class="side-nav__items">
-        <button class="side-nav__item is-active" type="button" id="navGuias" title="Guias"><span class="side-nav__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Zm2 4h10M7 12h10M7 16h6"/></svg></span><span class="side-nav__label">Guias</span></button>
-        <button class="side-nav__item" type="button" id="navNova" title="Nova guia"><span class="side-nav__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6M12 11v6M9 14h6"/></svg></span><span class="side-nav__label">Nova guia</span></button>
-      </div>
-    </div>
-    <div class="side-nav__bottom"><button class="side-nav__item" type="button" data-sair title="Sair"><span class="side-nav__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 17l5-5-5-5M15 12H3M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/></svg></span><span class="side-nav__label">Sair</span></button></div>
-  </aside>
-  <main class="page">
-    <div class="page__head">
-      <div><div class="eyebrow">Olhar eMulti</div><h1 class="page__title">Guias</h1><p class="page__subtitle">Acompanhe os encaminhamentos e priorize os casos mais urgentes.</p></div>
-      <button class="primary" id="btnNova">+ Nova guia</button>
-    </div>
-    <div class="panel table-wrap"><table class="data-table">
-      <thead><tr><th>Paciente</th><th>Prioridade<span class="help" tabindex="0" role="note" aria-label="Escala de prioridade: de 0 (mais prioritário) a 3 (menos prioritário)." data-tip="Escala de prioridade: de 0 (mais prioritário) a 3 (menos prioritário).">?</span></th><th>Especialidade</th><th>Status</th><th>Equipe</th></tr></thead>
-      <tbody id="tbl"></tbody>
-    </table></div>
-  </main>
-</div>
-
-<dialog id="dlg">
-  <form id="fGuia">
-    <h2 id="dlgTitulo" style="margin-bottom:14px"></h2>
-    <div id="gErr" class="err hidden" role="alert"></div>
-    <div class="row">
-      <div class="field"><label for="gNome">Nome do paciente</label><input id="gNome" required></div>
-      <div class="field"><label for="gCpf">CPF</label><input id="gCpf" inputmode="numeric" maxlength="14" required></div>
-    </div>
-    <div class="row">
-      <div class="field"><label for="gEsp">Especialidade</label><select id="gEsp"></select></div>
-      <div class="field"><label for="gPri">Prioridade<span class="help" tabindex="0" role="note" aria-label="Escala de prioridade: de 0 (mais prioritário) a 3 (menos prioritário)." data-tip="Escala de prioridade: de 0 (mais prioritário) a 3 (menos prioritário).">?</span></label><select id="gPri">
-        <option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3" selected>3</option></select></div>
-    </div>
-    <div class="row">
-      <div class="field"><label for="gData">Data de emissão</label><input id="gData" type="date" required></div>
-      <div class="field" id="fEquipe"><label for="gEquipe">Equipe</label><select id="gEquipe"></select></div>
-    </div>
-    <div class="field"><label for="gMotivo">Motivo do encaminhamento</label><textarea id="gMotivo" rows="2" required></textarea></div>
-    <div class="row">
-      <div class="field"><label for="gStatus">Status</label><select id="gStatus">
-        <option>Aguardando grupo</option><option>Em atendimento</option><option>Pausado</option><option>Encerrado</option></select></div>
-      <div class="field" id="fCom"><label for="gCom">Comunicação com o paciente realizada?</label><select id="gCom"><option value="">—</option><option>Sim</option><option>Não</option></select></div>
-    </div>
-    <div class="field hidden" id="fJust"><label for="gJust">Justificativa da comunicação</label><textarea id="gJust" rows="2"></textarea></div>
-    <div class="field hidden" id="fEnc"><label for="gEnc">Motivo do encerramento</label><textarea id="gEnc" rows="2"></textarea></div>
-    <div class="actions"><button type="button" class="ghost" id="btnCancelar">Cancelar</button><button class="primary">Salvar guia</button></div>
-  </form>
-</dialog>
-
-<script>
-const ESPECIALIDADES=['Psicologia','Fisioterapia','Nutrição','Fonoaudiologia','Serviço Social','Educação Física','Terapia Ocupacional'];
-let token=sessionStorage.getItem('token'), user=JSON.parse(sessionStorage.getItem('user')||'null'), guias=[], editId=null;
-const $=id=>document.getElementById(id);
-const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const fmtCpf=c=>String(c).replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/,'$1.$2.$3-$4');
-const PRI=['0','1','2','3'];
-
-async function api(path,opt={}){
-  const r=await fetch(path,{...opt,headers:{'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{})}});
-  const j=await r.json().catch(()=>({}));
-  if(r.status===401&&path!=='/api/login'){sair();throw new Error(j.erro||'Sessão expirada.');}
-  if(!r.ok)throw new Error(j.erro||'Falha na requisição.');
-  return j;
+// ---------- Senhas (PBKDF2-SHA256, formato "saltHex:hashHex") ----------
+const hex = (b) => [...new Uint8Array(b)].map((x) => x.toString(16).padStart(2, '0')).join('');
+async function derivar(senha, salt) {
+  const k = await crypto.subtle.importKey('raw', new TextEncoder().encode(senha), 'PBKDF2', false, ['deriveBits']);
+  return hex(await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt, iterations: 100000 }, k, 256));
 }
-function mostrarApp(){
-  $('login').classList.add('hidden');$('app').classList.remove('hidden');
-  $('whoName').textContent=user.nome;$('whoRole').textContent=user.role+(user.esp?' · '+user.esp:'');
-  carregar();
+async function senhaConfere(senha, armazenado) {
+  const [saltHex, hashHex] = String(armazenado).split(':');
+  if (!saltHex || !hashHex) return false;
+  const h = await derivar(senha, new Uint8Array(saltHex.match(/../g).map((x) => parseInt(x, 16))));
+  let d = h.length ^ hashHex.length; // comparação em tempo constante
+  for (let i = 0; i < h.length; i++) d |= h.charCodeAt(i) ^ (hashHex.charCodeAt(i) || 0);
+  return d === 0;
 }
-function sair(){sessionStorage.clear();token=null;user=null;$('app').classList.add('hidden');$('login').classList.remove('hidden');window.iniciarRede&&window.iniciarRede();}
-document.querySelectorAll('[data-sair]').forEach(b=>b.onclick=sair);
-$('accountButton').onclick=e=>{e.stopPropagation();const a=$('accountMenu').classList.toggle('hidden');$('accountButton').setAttribute('aria-expanded',String(!a));};
-document.addEventListener('click',()=>{$('accountMenu').classList.add('hidden');$('accountButton').setAttribute('aria-expanded','false');});
-$('sideNavToggle').onclick=()=>$('sideNav').classList.toggle('is-pinned-open');
-$('navGuias').onclick=()=>carregar();
 
-$('verSenha').onclick=()=>{const m=$('ls').type==='password';$('ls').type=m?'text':'password';$('verSenha').textContent=m?'Ocultar':'Mostrar';$('verSenha').setAttribute('aria-label',m?'Ocultar senha':'Mostrar senha');};
-$('fLogin').onsubmit=async e=>{
-  e.preventDefault();$('loginErr').classList.add('hidden');$('btnEntrar').disabled=true;$('btnEntrar').textContent='Entrando…';
-  try{
-    const r=await api('/api/login',{method:'POST',body:JSON.stringify({username:$('lu').value,senha:$('ls').value})});
-    token=r.token;user=r.user;sessionStorage.setItem('token',token);sessionStorage.setItem('user',JSON.stringify(user));
-    $('ls').value='';mostrarApp();
-  }catch(err){$('loginErr').textContent=err.message;$('loginErr').classList.remove('hidden');}
-  finally{$('btnEntrar').disabled=false;$('btnEntrar').textContent='Entrar';}
-};
-
-async function carregar(){
-  try{
-    guias=await api('/api/guias');
-    $('tbl').innerHTML=guias.map(g=>`<tr data-id="${g.id}" tabindex="0">
-      <td><b>${esc(g.nome_paciente)}</b><br><small>${esc(fmtCpf(g.cpf_paciente))}</small></td>
-      <td><span class="pri p${+g.prioridade}" title="Prioridade ${+g.prioridade}">${PRI[g.prioridade]??g.prioridade}</span></td>
-      <td>${esc(g.especialidade)}</td><td><span class="badge badge--user">${esc(g.status)}</span></td><td>${esc(g.equipe_id)}</td></tr>`).join('')
-      ||'<tr><td colspan="5" style="color:var(--muted)">Nenhuma guia ainda. Use “+ Nova guia” para cadastrar a primeira.</td></tr>';
-  }catch(e){if(token)alert(e.message);}
+// ---------- Utilidades ----------
+function cpfValido(cpf) {
+  if (!/^\d{11}$/.test(cpf) || /^(\d)\1+$/.test(cpf)) return false;
+  for (const n of [9, 10]) {
+    let s = 0;
+    for (let i = 0; i < n; i++) s += +cpf[i] * (n + 1 - i);
+    if (((s * 10) % 11) % 10 !== +cpf[n]) return false;
+  }
+  return true;
 }
-$('tbl').onclick=e=>{const tr=e.target.closest('tr[data-id]');if(tr)abrir(guias.find(g=>g.id==tr.dataset.id));};
-$('tbl').onkeydown=e=>{if(e.key==='Enter'){const tr=e.target.closest('tr[data-id]');if(tr)abrir(guias.find(g=>g.id==tr.dataset.id));}};
+const txt = (v) => (typeof v === 'string' && v.trim() ? v.trim() : null);
 
-function condicionais(){
-  const s=$('gStatus').value;
-  $('fJust').classList.toggle('hidden',!(s==='Em atendimento'&&$('gCom').value==='Não'));
-  $('fEnc').classList.toggle('hidden',s!=='Encerrado');
+function escopo(u) {
+  if (u.role === 'Profissional Executante') return { sql: 'equipe_id = ?', p: [u.eq ?? null] };
+  if (u.role === 'Gerenciamento Local')
+    return { sql: 'equipe_id IN (SELECT equipe_id FROM equipe_unidades WHERE unidade_id = ?)', p: [u.uni ?? null] };
+  return { sql: '1=1', p: [] };
 }
-$('gStatus').onchange=$('gCom').onchange=condicionais;
-$('gCpf').oninput=e=>{e.target.value=e.target.value.replace(/\D/g,'').slice(0,11).replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d{1,2})$/,'$1-$2');};
 
-async function abrir(g){
-  editId=g?g.id:null;$('gErr').classList.add('hidden');$('fGuia').reset();
-  $('dlgTitulo').textContent=g?'Editar guia':'Nova guia';
-  const execu=user.role==='Profissional Executante';
-  $('gEsp').innerHTML=(execu&&!g?[user.esp]:g?[g.especialidade]:ESPECIALIDADES).map(x=>`<option>${esc(x)}</option>`).join('');
-  $('gEsp').disabled=!!g||execu;
-  $('fEquipe').classList.toggle('hidden',execu||!!g);
-  if(!execu&&!g){const eq=await api('/api/equipes');$('gEquipe').innerHTML=eq.map(x=>`<option value="${esc(x.id)}">${esc(x.nome)}</option>`).join('');}
-  if(g){
-    $('gNome').value=g.nome_paciente;$('gCpf').value=fmtCpf(g.cpf_paciente);$('gPri').value=g.prioridade;$('gData').value=g.data_emissao;
-    $('gMotivo').value=g.motivo_encaminhamento;$('gStatus').value=g.status;$('gCom').value=g.comunicacao_realizada||'';
-    $('gJust').value=g.justificativa_comunicacao||'';$('gEnc').value=g.motivo_encerramento||'';
-  }else $('gData').value=new Date().toISOString().slice(0,10);
-  condicionais();$('dlg').showModal();
+async function podeEditarEspecialidade(db, u, esp) {
+  if (u.role !== 'Profissional Executante' || u.esp === esp) return true;
+  const r = await db.prepare('SELECT 1 FROM permissoes_cruzadas WHERE especialidade_origem = ? AND especialidade_destino = ?')
+    .bind(u.esp ?? null, esp).first();
+  return !!r;
 }
-$('btnNova').onclick=$('navNova').onclick=()=>abrir(null);
-$('btnCancelar').onclick=()=>$('dlg').close();
 
-$('fGuia').onsubmit=async e=>{
-  e.preventDefault();
-  const body={nome:$('gNome').value,cpf:$('gCpf').value,especialidade:$('gEsp').value,prioridade:$('gPri').value,data_emissao:$('gData').value,
-    motivo_encaminhamento:$('gMotivo').value,status:$('gStatus').value,comunicacao_realizada:$('gCom').value,
-    justificativa_comunicacao:$('gJust').value,motivo_encerramento:$('gEnc').value,equipe_id:$('gEquipe').value};
-  try{
-    await api(editId?`/api/guias/${editId}`:'/api/guias',{method:editId?'PUT':'POST',body:JSON.stringify(body)});
-    $('dlg').close();carregar();
-  }catch(err){$('gErr').textContent=err.message;$('gErr').classList.remove('hidden');}
-};
+// Valida e normaliza os campos da guia. Retorna { erro } ou { dados }.
+function validar(b, parcial = false) {
+  const d = {
+    cpf_paciente: String(b.cpf ?? '').replace(/\D/g, ''),
+    nome_paciente: txt(b.nome),
+    especialidade: txt(b.especialidade),
+    prioridade: Number(b.prioridade),
+    data_emissao: txt(b.data_emissao),
+    motivo_encaminhamento: txt(b.motivo_encaminhamento),
+    status: txt(b.status) ?? 'Aguardando grupo',
+    comunicacao_realizada: txt(b.comunicacao_realizada),
+    justificativa_comunicacao: txt(b.justificativa_comunicacao),
+    motivo_encerramento: txt(b.motivo_encerramento),
+  };
+  if (!cpfValido(d.cpf_paciente)) return { erro: 'CPF inválido.' };
+  if (!d.nome_paciente) return { erro: 'Informe o nome do paciente.' };
+  if (!parcial && !d.especialidade) return { erro: 'Informe a especialidade.' };
+  if (![0, 1, 2, 3].includes(d.prioridade)) return { erro: 'Prioridade deve ser de 0 a 3.' };
+  if (!d.data_emissao || !/^\d{4}-\d{2}-\d{2}$/.test(d.data_emissao)) return { erro: 'Data de emissão inválida.' };
+  if (!d.motivo_encaminhamento) return { erro: 'Informe o motivo do encaminhamento.' };
+  if (!STATUS.includes(d.status)) return { erro: 'Status inválido.' };
+  if (d.comunicacao_realizada && !['Sim', 'Não'].includes(d.comunicacao_realizada)) return { erro: 'Comunicação deve ser Sim ou Não.' };
+  if (d.status === 'Em atendimento' && d.comunicacao_realizada === 'Não' && !d.justificativa_comunicacao)
+    return { erro: 'A justificativa é obrigatória quando a comunicação não foi realizada.' };
+  if (d.status === 'Encerrado' && !d.motivo_encerramento) return { erro: 'O motivo do encerramento é obrigatório.' };
+  return { dados: d };
+}
 
+async function emitirToken(c, u) {
+  const user = { id: u.id, nome: u.nome_completo, role: u.nivel_acesso, esp: u.especialidade ?? null, eq: u.equipe_id ?? null, uni: u.unidade_id ?? null };
+  const token = await sign({ ...user, exp: Math.floor(Date.now() / 1000) + 8 * 3600 }, c.env.JWT_SECRET, 'HS256');
+  return { token, user };
+}
 
-// Fundo de rede interativo (mesmo estilo do portal de Regulação)
-(function(){
-  const cv=$('netBg'),sh=$('login'),ctx=cv.getContext('2d');
-  const reduz=matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const COR='32,59,143',DIST=190,RAIO=150,FORCA=46;
-  let w=0,h=0,ps=[],m={x:0,y:0,on:false},rodando=false;
-  function ini(){const dpr=Math.min(devicePixelRatio||1,2);w=sh.clientWidth;h=sh.clientHeight;cv.width=w*dpr;cv.height=h*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);
-    const n=Math.max(40,Math.min(100,Math.floor(w*h/15000)));ps=Array.from({length:n},()=>({x:Math.random()*w,y:Math.random()*h,vx:(Math.random()-.5)*.18,vy:(Math.random()-.5)*.18,ox:0,oy:0}));if(reduz)desenha();}
-  function passo(){for(const p of ps){p.x+=p.vx;p.y+=p.vy;if(p.x<=0||p.x>=w){p.vx*=-1;p.x=Math.max(0,Math.min(w,p.x));}if(p.y<=0||p.y>=h){p.vy*=-1;p.y=Math.max(0,Math.min(h,p.y));}
-    let tx=0,ty=0;if(m.on){const dx=p.x-m.x,dy=p.y-m.y,d=Math.hypot(dx,dy)||.001;if(d<RAIO){const f=(1-d/RAIO)*FORCA;tx=dx/d*f;ty=dy/d*f;}}p.ox+=(tx-p.ox)*.08;p.oy+=(ty-p.oy)*.08;}}
-  function desenha(){ctx.clearRect(0,0,w,h);for(let i=0;i<ps.length;i++){const a=ps[i],ax=a.x+a.ox,ay=a.y+a.oy;
-    for(let j=i+1;j<ps.length;j++){const b=ps[j],bx=b.x+b.ox,by=b.y+b.oy,d=Math.hypot(ax-bx,ay-by);
-      if(d<DIST){ctx.strokeStyle=`rgba(${COR},${((1-d/DIST)*.28).toFixed(3)})`;ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(bx,by);ctx.stroke();}}}
-    ctx.fillStyle=`rgba(${COR},.35)`;for(const p of ps){ctx.beginPath();ctx.arc(p.x+p.ox,p.y+p.oy,1.6,0,6.283);ctx.fill();}}
-  function loop(){if(sh.classList.contains('hidden')){rodando=false;return;}passo();desenha();requestAnimationFrame(loop);}
-  window.iniciarRede=()=>{ini();if(!reduz&&!rodando){rodando=true;requestAnimationFrame(loop);}};
-  addEventListener('resize',()=>{if(!sh.classList.contains('hidden'))ini();});
-  sh.addEventListener('mousemove',e=>{const r=sh.getBoundingClientRect();m={x:e.clientX-r.left,y:e.clientY-r.top,on:true};});
-  sh.addEventListener('mouseleave',()=>{m.on=false;});
-})();
-const PORTAL_URL='https://atencaoprimaria.apoiosaude.workers.dev';
-$('portalBtn').onclick=()=>{$('portalBtn').disabled=true;$('portalBtn').querySelector('span').textContent='Redirecionando…';
-  location.href=PORTAL_URL+'/login.html?next='+encodeURIComponent(location.origin+'/');};
-addEventListener('pageshow',()=>{$('portalBtn').disabled=false;$('portalBtn').querySelector('span').textContent='Acessar com Apoio APS';});
-(function(){ // retorno do Apoio APS: token no fragmento (#sso=) ou erro na URL (?erro=)
-  const q=new URLSearchParams(location.search),t=new URLSearchParams(location.hash.slice(1)).get('sso');
-  const erros={handoff:'Não foi possível concluir o acesso pelo Apoio APS. Tente novamente.','sem-acesso':'Você entrou no Apoio APS, mas ainda não tem acesso ao Olhar eMulti. Procure a gestão da sua equipe.'};
-  if(t){try{const b=t.split('.')[1].replace(/-/g,'+').replace(/_/g,'/');const p=JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(b),c=>c.charCodeAt(0))));
-    token=t;user={id:p.id,nome:p.nome,role:p.role,esp:p.esp,eq:p.eq,uni:p.uni};sessionStorage.setItem('token',token);sessionStorage.setItem('user',JSON.stringify(user));}catch{}}
-  if(t||q.has('erro'))history.replaceState(null,'',location.pathname);
-  const e=erros[q.get('erro')];if(e){$('loginErr').textContent=e;$('loginErr').classList.remove('hidden');}
-})();
-if(token&&user)mostrarApp();else window.iniciarRede();
-</script>
-</body>
-</html>
+// ---------- Acesso integrado pelo Apoio APS (mesmo fluxo do portal de Regulação) ----------
+// O Apoio APS autentica e devolve a pessoa a "/?handoff=<código de uso único>".
+// O código é validado no banco do Apoio APS (binding DB) e associado ao cadastro local pelo username.
+app.get('/', async (c) => {
+  const handoff = c.req.query('handoff');
+  if (!handoff) return c.env.ASSETS.fetch(c.req.raw);
+  c.header('Cache-Control', 'no-store');
+  try {
+    const h = await c.env.DB.prepare(`SELECT h.expires_at, h.used, u.username, u.active
+      FROM handoff_tokens h JOIN users u ON u.id = h.user_id WHERE h.token = ?`).bind(handoff).first();
+    if (!h || h.used || !h.active || new Date(h.expires_at).getTime() < Date.now()) return c.redirect('/?erro=handoff', 302);
+    const upd = await c.env.DB.prepare('UPDATE handoff_tokens SET used = 1 WHERE token = ? AND used = 0').bind(handoff).run();
+    if (!upd.meta?.changes) return c.redirect('/?erro=handoff', 302);
+    const u = await c.env.DB_REGULACAO.prepare('SELECT * FROM usuarios WHERE lower(username) = ? AND ativo = 1')
+      .bind(String(h.username).trim().toLowerCase()).first();
+    if (!u) return c.redirect('/?erro=sem-acesso', 302);
+    const { token } = await emitirToken(c, u);
+    return c.redirect(`/#sso=${token}`, 302); // fragmento não é enviado a servidores nem registrado em logs
+  } catch (e) {
+    console.error(e);
+    return c.redirect('/?erro=handoff', 302);
+  }
+});
+
+// ---------- Login (público) ----------
+app.post('/api/login', async (c) => {
+  const b = await c.req.json().catch(() => ({}));
+  const u = await c.env.DB_REGULACAO.prepare('SELECT * FROM usuarios WHERE username = ? AND ativo = 1')
+    .bind(String(b.username ?? '').trim().toLowerCase()).first();
+  // Mesmo custo de cálculo quando o usuário não existe (evita revelar contas)
+  const ok = await senhaConfere(String(b.senha ?? ''), u?.senha_hash ?? '00:00');
+  if (!u || !ok) return c.json({ erro: 'Usuário ou senha incorretos.' }, 401);
+  return c.json(await emitirToken(c, u));
+});
+
+// ---------- Autenticação: identidade vem só do token assinado ----------
+app.use('/api/*', async (c, next) => {
+  if (c.req.path === '/api/login') return next();
+  const t = (c.req.header('Authorization') || '').replace(/^Bearer /, '');
+  try {
+    c.set('user', await verify(t, c.env.JWT_SECRET, 'HS256'));
+  } catch {
+    return c.json({ erro: 'Sessão inválida ou expirada. Entre novamente.' }, 401);
+  }
+  await next();
+});
+
+app.onError((e, c) => {
+  console.error(e);
+  return c.json({ erro: 'Erro interno. Tente novamente.' }, 500);
+});
+
+app.get('/api/equipes', async (c) => {
+  const u = c.get('user');
+  const s = u.role === 'Profissional Executante' ? { sql: 'id = ?', p: [u.eq] }
+    : u.role === 'Gerenciamento Local' ? { sql: 'id IN (SELECT equipe_id FROM equipe_unidades WHERE unidade_id = ?)', p: [u.uni] }
+    : { sql: '1=1', p: [] };
+  const { results } = await c.env.DB_REGULACAO.prepare(`SELECT id, nome FROM equipes WHERE ${s.sql} ORDER BY nome`).bind(...s.p).all();
+  return c.json(results);
+});
+
+app.get('/api/guias', async (c) => {
+  const s = escopo(c.get('user'));
+  const { results } = await c.env.DB_REGULACAO
+    .prepare(`SELECT * FROM guias WHERE ${s.sql} ORDER BY prioridade ASC, data_cadastro ASC`).bind(...s.p).all();
+  return c.json(results);
+});
+
+app.post('/api/guias', async (c) => {
+  const u = c.get('user');
+  const db = c.env.DB_REGULACAO;
+  const b = await c.req.json().catch(() => ({}));
+  const v = validar(b);
+  if (v.erro) return c.json({ erro: v.erro }, 400);
+  const d = v.dados;
+
+  // A equipe vem do perfil (executante) ou do corpo (demais perfis, dentro do seu escopo)
+  const equipeId = u.role === 'Profissional Executante' ? u.eq : txt(b.equipe_id);
+  if (!equipeId) return c.json({ erro: 'Informe a equipe responsável pela guia.' }, 400);
+  if (u.role === 'Gerenciamento Local') {
+    const ok = await db.prepare('SELECT 1 FROM equipe_unidades WHERE equipe_id = ? AND unidade_id = ?').bind(equipeId, u.uni ?? null).first();
+    if (!ok) return c.json({ erro: 'Esta equipe não atende a sua unidade.' }, 403);
+  }
+  if (!(await podeEditarEspecialidade(db, u, d.especialidade)))
+    return c.json({ erro: 'Você não tem permissão para cadastrar guias desta especialidade.' }, 403);
+
+  try {
+    const info = await db.prepare(`INSERT INTO guias (cpf_paciente, nome_paciente, especialidade, prioridade, data_emissao,
+      motivo_encaminhamento, status, comunicacao_realizada, justificativa_comunicacao, motivo_encerramento, equipe_id)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?)`)
+      .bind(d.cpf_paciente, d.nome_paciente, d.especialidade, d.prioridade, d.data_emissao, d.motivo_encaminhamento, d.status,
+        d.comunicacao_realizada, d.justificativa_comunicacao, d.motivo_encerramento, equipeId).run();
+    return c.json({ sucesso: true, id: info.meta.last_row_id }, 201);
+  } catch (e) {
+    if (/FOREIGN KEY/i.test(e.message)) return c.json({ erro: 'Equipe inexistente.' }, 400);
+    throw e;
+  }
+});
+
+app.put('/api/guias/:id', async (c) => {
+  const u = c.get('user');
+  const db = c.env.DB_REGULACAO;
+  const id = Number(c.req.param('id'));
+  const s = escopo(u);
+  const guia = await db.prepare(`SELECT * FROM guias WHERE id = ? AND ${s.sql}`).bind(id, ...s.p).first();
+  if (!guia) return c.json({ erro: 'Guia não encontrada.' }, 404);
+  if (!(await podeEditarEspecialidade(db, u, guia.especialidade)))
+    return c.json({ erro: 'Você não tem permissão para editar guias desta especialidade.' }, 403);
+
+  const v = validar(await c.req.json().catch(() => ({})), true);
+  if (v.erro) return c.json({ erro: v.erro }, 400);
+  const d = v.dados;
+  await db.prepare(`UPDATE guias SET cpf_paciente=?, nome_paciente=?, prioridade=?, data_emissao=?, motivo_encaminhamento=?,
+    status=?, comunicacao_realizada=?, justificativa_comunicacao=?, motivo_encerramento=? WHERE id=?`)
+    .bind(d.cpf_paciente, d.nome_paciente, d.prioridade, d.data_emissao, d.motivo_encaminhamento, d.status,
+      d.comunicacao_realizada, d.justificativa_comunicacao, d.motivo_encerramento, id).run();
+  return c.json({ sucesso: true });
+});
+
+export default app;
