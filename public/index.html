@@ -342,22 +342,28 @@ const CFG={
    {k:'especialidade',l:'Especialidade (Profissional Executante)',o:ESPECIALIDADES.map(x=>[x,x]),v:1},{k:'equipe_id',l:'Equipe (Profissional Executante)',o:AD.equipes.map(x=>[x.id,x.nome]),v:1},
    {k:'unidade_id',l:'Unidade (Gerenciamento Local)',o:AD.unidades.map(x=>[x.id,x.nome]),v:1},{k:'ativo',l:'Situação',o:[['1','Ativo'],['0','Inativo']]},
    {k:'senha',l:e?'Nova senha (vazio = manter)':'Senha (vazio = acesso só pelo Apoio APS)',t:'password'}]},
- equipes:{rot:'equipe',url:'/api/admin/equipes',cab:['Equipe','Unidades atendidas',''],
-  lin:q=>[q.nome,q.unidades.map(i=>nomeDe(AD.unidades,i)).join(', ')||'—'],val:q=>({nome:q.nome,unidades:q.unidades}),
-  campos:()=>[{k:'nome',l:'Nome da equipe'},{k:'unidades',l:'Unidades atendidas',c:AD.unidades.map(x=>[x.id,x.nome])}]},
+ equipes:{rot:'equipe',url:'/api/admin/equipes',cab:['Equipe','Unidades atendidas','Profissionais',''],del:1,
+  lin:q=>[q.nome,q.unidades.map(i=>nomeDe(AD.unidades,i)).join(', ')||'—',AD.usuarios.filter(u=>u.equipe_id===q.id).map(u=>u.nome_completo).join(', ')||'—'],
+  val:q=>({nome:q.nome,unidades:q.unidades,profissionais:AD.usuarios.filter(u=>u.equipe_id===q.id).map(u=>u.id)}),
+  campos:()=>[{k:'nome',l:'Nome da equipe'},{k:'unidades',l:'Unidades atendidas',c:AD.unidades.map(x=>[x.id,x.nome])},
+   {k:'profissionais',l:'Profissionais da equipe (marcar move o profissional de outra equipe)',c:AD.usuarios.filter(u=>u.nivel_acesso==='Profissional Executante').map(u=>[u.id,u.nome_completo+(u.especialidade?' · '+u.especialidade:'')])}]},
  permissoes:{rot:'permissão',url:'/api/admin/permissoes',btn:'Remover',cab:['Especialidade que pode editar','Guias da especialidade','Concedido por',''],
   lin:r=>[r.especialidade_origem,r.especialidade_destino,r.concedido_por],
   campos:()=>[{k:'origem',l:'Especialidade que poderá editar',o:ESPECIALIDADES.map(x=>[x,x])},{k:'destino',l:'…guias da especialidade',o:ESPECIALIDADES.map(x=>[x,x])}]},
- unidades:{rot:'unidade',url:'/api/admin/unidades',cab:['Unidade',''],lin:u=>[u.nome],val:u=>({nome:u.nome}),campos:()=>[{k:'nome',l:'Nome da unidade'}]}
+ unidades:{rot:'unidade',url:'/api/admin/unidades',cab:['Unidade','Equipes que atendem','Gerenciamento local',''],del:1,
+  lin:u=>[u.nome,AD.equipes.filter(q=>q.unidades.includes(u.id)).map(q=>q.nome).join(', ')||'—',AD.usuarios.filter(x=>x.unidade_id===u.id).map(x=>x.nome_completo).join(', ')||'—'],val:u=>({nome:u.nome}),campos:()=>[{k:'nome',l:'Nome da unidade'}]}
 };
 function renderAdmin(){
  const c=CFG[aba];document.querySelectorAll('#admTabs button').forEach(b=>b.classList.toggle('on',b.dataset.a===aba));
  $('admNovo').textContent='+ Novo '+c.rot;$('admHead').innerHTML='<tr>'+c.cab.map(x=>'<th>'+x+'</th>').join('')+'</tr>';
- const L=AD[aba];$('admBody').innerHTML=L.length?L.map(r=>'<tr>'+c.lin(r).map(x=>'<td>'+esc(x)+'</td>').join('')+'<td><button class="mini" data-e="'+esc(r.id)+'">'+(c.btn||'Editar')+'</button></td></tr>').join(''):'<tr><td colspan="9">Nada cadastrado ainda.</td></tr>';
+ const L=AD[aba];$('admBody').innerHTML=L.length?L.map(r=>'<tr>'+c.lin(r).map(x=>'<td>'+esc(x)+'</td>').join('')+'<td><button class="mini" data-e="'+esc(r.id)+'">'+(c.btn||'Editar')+'</button>'+(c.del?' <button class="mini" data-d="'+esc(r.id)+'">Excluir</button>':'')+'</td></tr>').join(''):'<tr><td colspan="9">Nada cadastrado ainda.</td></tr>';
 }
 document.querySelectorAll('#admTabs button').forEach(b=>b.onclick=()=>{aba=b.dataset.a;renderAdmin();});
 $('admNovo').onclick=()=>formAdm(null);
-$('admBody').onclick=async e=>{const id=e.target.dataset?.e;if(!id)return;
+$('admBody').onclick=async e=>{const del=e.target.dataset?.d;
+ if(del){if(!confirm('Excluir este cadastro? Esta ação não pode ser desfeita.'))return;
+  try{await api(CFG[aba].url+'/'+del,{method:'DELETE'});carregarAdmin();}catch(err){alert(err.message);}return;}
+ const id=e.target.dataset?.e;if(!id)return;
  if(aba==='permissoes'){const [o,d]=id.split('|');if(!confirm('Remover a permissão de '+o+' editar guias de '+d+'?'))return;
   try{await api('/api/admin/permissoes?origem='+encodeURIComponent(o)+'&destino='+encodeURIComponent(d),{method:'DELETE'});carregarAdmin();}catch(err){alert(err.message);}return;}
  formAdm(AD[aba].find(x=>x.id===id));};
