@@ -6,7 +6,7 @@
 <title>Olhar eMulti</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,wght@0,600;1,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,wght@0,600;1,400&family=Inter:wght@400;500;600;700&family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{--paper:#F4F6FB;--ink:#1B306E;--soft:#5B6B87;--line:#E1E4EC;--teal:#1C9C76;--tealD:#186C5E;--tealS:#E4F5EE;--red:#D93025;--redS:#FDECE9;--amber:#B7791F;--amberS:#FBF0DD;--card:#fff}
 *{box-sizing:border-box}
@@ -20,8 +20,27 @@ button{font:inherit;font-weight:600;border:0;border-radius:6px;padding:9px 16px;
 .ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
 .field{margin-bottom:12px}.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .hidden{display:none!important}
-#login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px}
-.box{background:var(--card);padding:32px;border-radius:10px;width:100%;max-width:380px;border:1px solid var(--line)}
+#login{position:relative;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#fff;padding:24px;overflow:hidden;font-family:Montserrat,system-ui,sans-serif}
+#netBg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.login-layout{position:relative;z-index:1;width:100%;max-width:1080px;display:flex;align-items:center;justify-content:space-between;gap:64px;padding:0 24px}
+.login-hero{flex:1;min-width:0;max-width:520px}
+.login-hero h1{font:800 40px/1.15 Montserrat,sans-serif;letter-spacing:-.01em;color:#152a68;margin:0 0 16px}
+.login-hero p{font-size:17px;line-height:1.55;color:var(--soft);max-width:46ch;margin:0}
+.box{position:relative;z-index:1;width:100%;max-width:380px;flex-shrink:0;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 12px 32px rgba(21,42,104,.16);padding:32px 30px 28px}
+.box .logo{display:flex;justify-content:center;margin-bottom:18px}
+.box .logo span{background:#203b8f;border-radius:12px;padding:10px 18px;display:flex}
+.box .logo img{height:58px;width:auto;display:block}
+.box .produto{text-align:center;font-size:20px;font-weight:800;color:#152a68;margin-bottom:4px}
+.box .sub{text-align:center;color:var(--soft);font-size:12.5px;line-height:1.5;margin-bottom:22px}
+.box label{font-weight:700}
+.box input{padding:11px 13px;border:1.5px solid var(--line);border-radius:8px;font-size:14.5px}
+.box input:focus{border-color:#203b8f;outline:none;box-shadow:0 0 0 3px rgba(32,59,143,.14)}
+.pw{position:relative}.pw input{padding-right:76px}
+.pw button{position:absolute;right:6px;top:50%;transform:translateY(-50%);background:transparent;color:#203b8f;font-size:11px;font-weight:700;padding:7px}
+.box .entrar{width:100%;padding:12px;font-size:15px;border-radius:8px}
+.box .entrar[disabled]{opacity:.6;cursor:wait}
+.box .nota{text-align:center;color:var(--soft);font-size:11px;line-height:1.5;margin-top:16px}
+@media(max-width:860px){.login-layout{flex-direction:column;text-align:center;gap:32px}.login-hero{max-width:100%}.login-hero h1{font-size:28px}.login-hero p{margin:0 auto}}
 .err{background:var(--redS);color:var(--red);padding:8px 10px;border-radius:6px;font-size:13px;margin-bottom:12px}
 .bar{background:var(--ink);padding:12px 24px;display:flex;justify-content:space-between;align-items:center;color:#fff;gap:12px}
 .brand{display:flex;align-items:center;gap:10px;line-height:1.1}.brand img{height:32px}
@@ -46,18 +65,28 @@ dialog::backdrop{background:#1B306E88}
 <body>
 
 <div id="login">
-  <form class="box" id="fLogin">
-    <h2 style="margin-bottom:16px">Olhar eMulti</h2>
-    <div id="loginErr" class="err hidden" role="alert"></div>
-    <div class="field"><label for="lu">Usuário</label><input id="lu" autocomplete="username" required></div>
-    <div class="field"><label for="ls">Senha</label><input id="ls" type="password" autocomplete="current-password" required></div>
-    <button class="primary" style="width:100%">Entrar</button>
-  </form>
+  <canvas id="netBg" aria-hidden="true"></canvas>
+  <div class="login-layout">
+    <div class="login-hero">
+      <h1>Bem-vindo ao Olhar eMulti</h1>
+      <p>Acompanhamento das guias de encaminhamento e dos grupos de atendimento eMulti, em um ambiente integrado à rede municipal de saúde.</p>
+    </div>
+    <form class="box" id="fLogin">
+      <div class="logo"><span><img src="assets/imagotipo-branco.png" alt="Brasão do município"></span></div>
+      <div class="produto">Olhar eMulti</div>
+      <div class="sub">Acesso restrito a profissionais autorizados</div>
+      <div id="loginErr" class="err hidden" role="alert"></div>
+      <div class="field"><label for="lu">Usuário</label><input id="lu" autocomplete="username" spellcheck="false" required autofocus></div>
+      <div class="field"><label for="ls">Senha</label><div class="pw"><input id="ls" type="password" autocomplete="current-password" required><button type="button" id="verSenha" aria-label="Mostrar senha">Mostrar</button></div></div>
+      <button class="primary entrar" id="btnEntrar">Entrar</button>
+      <div class="nota">Os dados dos pacientes são de uso exclusivo dos profissionais da rede.</div>
+    </form>
+  </div>
 </div>
 
 <div id="app" class="hidden">
   <header class="bar">
-    <div class="brand"><img src="assets/imagotipo.png" alt="Olhar eMulti"><div><b>Olhar</b><i>eMulti</i></div></div>
+    <div class="brand"><img src="assets/imagotipo-branco.png" alt="Olhar eMulti"><div><b>Olhar</b><i>eMulti</i></div></div>
     <div class="who"><b id="whoName"></b><br><span id="whoRole"></span><br><button id="btnSair">Sair</button></div>
   </header>
   <main>
@@ -118,16 +147,18 @@ function mostrarApp(){
   $('whoName').textContent=user.nome;$('whoRole').textContent=user.role+(user.esp?' · '+user.esp:'');
   carregar();
 }
-function sair(){sessionStorage.clear();token=null;user=null;$('app').classList.add('hidden');$('login').classList.remove('hidden');}
+function sair(){sessionStorage.clear();token=null;user=null;$('app').classList.add('hidden');$('login').classList.remove('hidden');window.iniciarRede&&window.iniciarRede();}
 $('btnSair').onclick=sair;
 
+$('verSenha').onclick=()=>{const m=$('ls').type==='password';$('ls').type=m?'text':'password';$('verSenha').textContent=m?'Ocultar':'Mostrar';$('verSenha').setAttribute('aria-label',m?'Ocultar senha':'Mostrar senha');};
 $('fLogin').onsubmit=async e=>{
-  e.preventDefault();$('loginErr').classList.add('hidden');
+  e.preventDefault();$('loginErr').classList.add('hidden');$('btnEntrar').disabled=true;$('btnEntrar').textContent='Entrando…';
   try{
     const r=await api('/api/login',{method:'POST',body:JSON.stringify({username:$('lu').value,senha:$('ls').value})});
     token=r.token;user=r.user;sessionStorage.setItem('token',token);sessionStorage.setItem('user',JSON.stringify(user));
     $('ls').value='';mostrarApp();
   }catch(err){$('loginErr').textContent=err.message;$('loginErr').classList.remove('hidden');}
+  finally{$('btnEntrar').disabled=false;$('btnEntrar').textContent='Entrar';}
 };
 
 async function carregar(){
@@ -180,7 +211,28 @@ $('fGuia').onsubmit=async e=>{
   }catch(err){$('gErr').textContent=err.message;$('gErr').classList.remove('hidden');}
 };
 
-if(token&&user)mostrarApp();
+
+// Fundo de rede interativo (mesmo estilo do portal de Regulação)
+(function(){
+  const cv=$('netBg'),sh=$('login'),ctx=cv.getContext('2d');
+  const reduz=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const COR='32,59,143',DIST=190,RAIO=150,FORCA=46;
+  let w=0,h=0,ps=[],m={x:0,y:0,on:false},rodando=false;
+  function ini(){const dpr=Math.min(devicePixelRatio||1,2);w=sh.clientWidth;h=sh.clientHeight;cv.width=w*dpr;cv.height=h*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);
+    const n=Math.max(40,Math.min(100,Math.floor(w*h/15000)));ps=Array.from({length:n},()=>({x:Math.random()*w,y:Math.random()*h,vx:(Math.random()-.5)*.18,vy:(Math.random()-.5)*.18,ox:0,oy:0}));if(reduz)desenha();}
+  function passo(){for(const p of ps){p.x+=p.vx;p.y+=p.vy;if(p.x<=0||p.x>=w){p.vx*=-1;p.x=Math.max(0,Math.min(w,p.x));}if(p.y<=0||p.y>=h){p.vy*=-1;p.y=Math.max(0,Math.min(h,p.y));}
+    let tx=0,ty=0;if(m.on){const dx=p.x-m.x,dy=p.y-m.y,d=Math.hypot(dx,dy)||.001;if(d<RAIO){const f=(1-d/RAIO)*FORCA;tx=dx/d*f;ty=dy/d*f;}}p.ox+=(tx-p.ox)*.08;p.oy+=(ty-p.oy)*.08;}}
+  function desenha(){ctx.clearRect(0,0,w,h);for(let i=0;i<ps.length;i++){const a=ps[i],ax=a.x+a.ox,ay=a.y+a.oy;
+    for(let j=i+1;j<ps.length;j++){const b=ps[j],bx=b.x+b.ox,by=b.y+b.oy,d=Math.hypot(ax-bx,ay-by);
+      if(d<DIST){ctx.strokeStyle=`rgba(${COR},${((1-d/DIST)*.28).toFixed(3)})`;ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(bx,by);ctx.stroke();}}}
+    ctx.fillStyle=`rgba(${COR},.35)`;for(const p of ps){ctx.beginPath();ctx.arc(p.x+p.ox,p.y+p.oy,1.6,0,6.283);ctx.fill();}}
+  function loop(){if(sh.classList.contains('hidden')){rodando=false;return;}passo();desenha();requestAnimationFrame(loop);}
+  window.iniciarRede=()=>{ini();if(!reduz&&!rodando){rodando=true;requestAnimationFrame(loop);}};
+  addEventListener('resize',()=>{if(!sh.classList.contains('hidden'))ini();});
+  sh.addEventListener('mousemove',e=>{const r=sh.getBoundingClientRect();m={x:e.clientX-r.left,y:e.clientY-r.top,on:true};});
+  sh.addEventListener('mouseleave',()=>{m.on=false;});
+})();
+if(token&&user)mostrarApp();else window.iniciarRede();
 </script>
 </body>
 </html>
