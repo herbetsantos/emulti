@@ -73,6 +73,36 @@ function validar(b, parcial = false) {
   return { dados: d };
 }
 
+async function emitirToken(c, u) {
+  const user = { id: u.id, nome: u.nome_completo, role: u.nivel_acesso, esp: u.especialidade ?? null, eq: u.equipe_id ?? null, uni: u.unidade_id ?? null };
+  const token = await sign({ ...user, exp: Math.floor(Date.now() / 1000) + 8 * 3600 }, c.env.JWT_SECRET, 'HS256');
+  return { token, user };
+}
+
+// ---------- Acesso integrado pelo Apoio APS (mesmo fluxo do portal de Regulação) ----------
+// O Apoio APS autentica e devolve a pessoa a "/?handoff=<código de uso único>".
+// O código é validado no banco do Apoio APS (binding DB) e associado ao cadastro local pelo username.
+app.get('/', async (c) => {
+  const handoff = c.req.query('handoff');
+  if (!handoff) return c.env.ASSETS.fetch(c.req.raw);
+  c.header('Cache-Control', 'no-store');
+  try {
+    const h = await c.env.DB.prepare(`SELECT h.expires_at, h.used, u.username, u.active
+      FROM handoff_tokens h JOIN users u ON u.id = h.user_id WHERE h.token = ?`).bind(handoff).first();
+    if (!h || h.used || !h.active || new Date(h.expires_at).getTime() < Date.now()) return c.redirect('/?erro=handoff', 302);
+    const upd = await c.env.DB.prepare('UPDATE handoff_tokens SET used = 1 WHERE token = ? AND used = 0').bind(handoff).run();
+    if (!upd.meta?.changes) return c.redirect('/?erro=handoff', 302);
+    const u = await c.env.DB_REGULACAO.prepare('SELECT * FROM usuarios WHERE lower(username) = ? AND ativo = 1')
+      .bind(String(h.username).trim().toLowerCase()).first();
+    if (!u) return c.redirect('/?erro=sem-acesso', 302);
+    const { token } = await emitirToken(c, u);
+    return c.redirect(`/#sso=${token}`, 302); // fragmento não é enviado a servidores nem registrado em logs
+  } catch (e) {
+    console.error(e);
+    return c.redirect('/?erro=handoff', 302);
+  }
+});
+
 // ---------- Login (público) ----------
 app.post('/api/login', async (c) => {
   const b = await c.req.json().catch(() => ({}));
@@ -81,9 +111,7 @@ app.post('/api/login', async (c) => {
   // Mesmo custo de cálculo quando o usuário não existe (evita revelar contas)
   const ok = await senhaConfere(String(b.senha ?? ''), u?.senha_hash ?? '00:00');
   if (!u || !ok) return c.json({ erro: 'Usuário ou senha incorretos.' }, 401);
-  const user = { id: u.id, nome: u.nome_completo, role: u.nivel_acesso, esp: u.especialidade ?? null, eq: u.equipe_id ?? null, uni: u.unidade_id ?? null };
-  const token = await sign({ ...user, exp: Math.floor(Date.now() / 1000) + 8 * 3600 }, c.env.JWT_SECRET, 'HS256');
-  return c.json({ token, user });
+  return c.json(await emitirToken(c, u));
 });
 
 // ---------- Autenticação: identidade vem só do token assinado ----------

@@ -4,65 +4,157 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Olhar eMulti</title>
+<link rel="icon" href="assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,wght@0,600;1,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-:root{--paper:#F4F6FB;--ink:#1B306E;--soft:#5B6B87;--line:#E1E4EC;--teal:#1C9C76;--tealD:#186C5E;--tealS:#E4F5EE;--red:#D93025;--redS:#FDECE9;--amber:#B7791F;--amberS:#FBF0DD;--card:#fff}
+:root{--primary:#203b8f;--primary-dark:#152a68;--accent:#1c9c76;--accent-dark:#157b5d;--ink:#1b2340;--muted:#5b6480;--soft:#5b6480;--line:#dde3f0;--surface:#f4f6fb;--bg:#f2f4f7;--danger:#c0392b;
+--shadow-lg:0 12px 32px rgba(21,42,104,.16);--app-topbar-h:66px;--side-w:70px;--side-w-open:238px;--side-ink:#173e72;--side-hover:#eef5fb}
 *{box-sizing:border-box}
-body{margin:0;background:var(--paper);color:var(--ink);font:400 15px/1.45 Inter,system-ui,sans-serif}
-h2{font-family:'Source Serif 4',serif;font-weight:600;margin:0}
-label{display:block;font-size:13px;font-weight:600;margin-bottom:4px}
-input,select,textarea{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:6px;font:inherit;color:inherit;background:#fff}
-:focus-visible{outline:2px solid var(--teal);outline-offset:1px}
-button{font:inherit;font-weight:600;border:0;border-radius:6px;padding:9px 16px;cursor:pointer}
-.primary{background:var(--teal);color:#fff}.primary:hover{background:var(--tealD)}
-.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
-.field{margin-bottom:12px}.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:400 15px/1.45 Montserrat,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+h1,h2,h3{margin:0}
+button{font:inherit;font-weight:700;border:0;border-radius:8px;padding:10px 18px;cursor:pointer;transition:background .15s ease}
+button:active{transform:translateY(1px)}button[disabled]{opacity:.55;cursor:not-allowed}
+:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+.primary{background:var(--accent);color:#fff}.primary:hover{background:var(--accent-dark)}
+.ghost{background:#fff;color:var(--primary);border:1.5px solid var(--line)}.ghost:hover{border-color:var(--primary)}
+.field{margin-bottom:16px}.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+label{display:block;font-size:13px;font-weight:700;color:var(--ink);margin-bottom:6px}
+input,select,textarea{width:100%;padding:11px 13px;border:1.5px solid var(--line);border-radius:8px;font:inherit;font-size:14.5px;color:var(--ink);background:#fff}
+input:focus,select:focus,textarea:focus{border-color:var(--primary);outline:none;box-shadow:0 0 0 3px rgba(32,59,143,.14)}
 .hidden{display:none!important}
-#login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px}
-.box{background:var(--card);padding:32px;border-radius:10px;width:100%;max-width:380px;border:1px solid var(--line)}
-.err{background:var(--redS);color:var(--red);padding:8px 10px;border-radius:6px;font-size:13px;margin-bottom:12px}
-.bar{background:var(--ink);padding:12px 24px;display:flex;justify-content:space-between;align-items:center;color:#fff;gap:12px}
-.brand{display:flex;align-items:center;gap:10px;line-height:1.1}.brand img{height:32px}
-.brand b{display:block;font-weight:700;font-size:17px}.brand i{display:block;font:italic 400 14px 'Source Serif 4',serif;color:var(--tealS)}
-.bar .who{text-align:right;font-size:14px}.bar .who span{font-size:12px;opacity:.8}
-.bar button{margin-top:4px;padding:3px 10px;font-size:12px;background:transparent;color:#fff;border:1px solid #ffffff66}
-main{max-width:1100px;margin:20px auto;padding:0 24px}
-.head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
-.wrap{overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:8px}
-table{width:100%;border-collapse:collapse;min-width:720px}
-th{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);font-size:13px;color:var(--soft)}
-td{padding:10px 12px;border-bottom:1px solid var(--line)}tr:last-child td{border-bottom:0}
-tbody tr{cursor:pointer}tbody tr:hover{background:var(--paper)}
-.pri{display:inline-block;padding:2px 9px;border-radius:99px;font-size:12px;font-weight:600}
-.p0{background:var(--redS);color:var(--red)}.p1{background:var(--amberS);color:var(--amber)}.p2{background:var(--tealS);color:var(--tealD)}.p3{background:#E6ECFA;color:var(--ink)}
-dialog{border:0;border-radius:10px;padding:24px;width:min(560px,94vw);max-height:92vh}
-dialog::backdrop{background:#1B306E88}
-.actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
-@media(max-width:560px){.row{grid-template-columns:1fr}.bar{padding:12px 16px}main{padding:0 12px}}
+.err{background:#fdece9;color:var(--danger);padding:10px 12px;border-radius:8px;font-size:13.5px;margin-bottom:14px}
+/* Login */
+#login{position:relative;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#fff;padding:24px;overflow:hidden}
+#netBg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.login-layout{position:relative;z-index:1;width:100%;max-width:1080px;display:flex;align-items:center;justify-content:space-between;gap:64px;padding:0 24px}
+.login-hero{flex:1;min-width:0;max-width:520px}
+.login-hero h1{font-size:40px;font-weight:800;line-height:1.15;letter-spacing:-.01em;color:var(--primary-dark);margin-bottom:16px}
+.login-hero p{font-size:17px;line-height:1.55;color:var(--muted);max-width:46ch;margin:0}
+.box{position:relative;z-index:1;width:100%;max-width:380px;flex-shrink:0;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow-lg);padding:32px 30px 28px}
+.box .logo{display:flex;justify-content:center;margin-bottom:18px}
+.box .logo span{background:var(--primary);border-radius:12px;padding:10px 18px;display:flex}
+.box .logo img{height:58px;width:auto;display:block}
+.box .produto{text-align:center;font-size:20px;font-weight:800;color:var(--primary-dark);margin-bottom:4px}
+.box .sub{text-align:center;color:var(--muted);font-size:12.5px;line-height:1.5;margin-bottom:22px}
+.pw{position:relative}.pw input{padding-right:76px}
+.pw button{position:absolute;right:6px;top:50%;transform:translateY(-50%);background:transparent;color:var(--primary);font-size:11px;padding:7px}
+.box .entrar{width:100%;padding:12px;font-size:15px}.box .entrar[disabled]{cursor:wait}
+.divider{display:flex;align-items:center;gap:10px;margin:17px 0;color:var(--muted);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+.divider:before,.divider:after{content:"";height:1px;background:var(--line);flex:1}
+.portal-access{width:100%;min-height:44px;border:1.5px solid var(--line);background:#fff;color:var(--primary);border-radius:8px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:13px}
+.portal-access:hover{border-color:var(--primary);background:var(--surface)}
+.portal-access svg{width:17px;height:17px;stroke:currentColor;fill:none}
+.box .nota{text-align:center;color:var(--muted);font-size:11px;line-height:1.5;margin-top:16px}
+@media(max-width:860px){.login-layout{flex-direction:column;text-align:center;gap:32px}.login-hero{max-width:100%}.login-hero h1{font-size:28px}.login-hero p{margin:0 auto}}
+/* Barra superior */
+.app-topbar{position:fixed;inset:0 0 auto 0;height:var(--app-topbar-h);z-index:220;background:var(--primary);display:flex;align-items:center;justify-content:space-between;padding:0 26px 0 20px}
+.app-brand{display:flex;align-items:center;gap:10px;height:54px;color:#fff;text-decoration:none}
+.app-brand img{height:46px;width:auto}
+.app-brand__text{display:flex;align-items:center;gap:10px;font-size:17px;letter-spacing:-.02em;white-space:nowrap}
+.app-brand__text strong{font-size:22px;font-weight:800}.app-brand__text>span:last-child{font-weight:600}
+.app-brand__divider{width:1px;height:24px;background:rgba(255,255,255,.28)}
+.account-wrap{position:relative}
+.account-button{background:transparent;color:#fff;display:flex;align-items:center;gap:14px;padding:7px 8px 7px 14px;border-radius:7px;text-align:right;font-weight:400}
+.account-button:hover,.account-button[aria-expanded=true]{background:rgba(255,255,255,.1)}
+.account-button__identity{display:flex;flex-direction:column;gap:2px;min-width:180px;max-width:340px}
+.account-button__identity strong{font-size:13px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.account-button__identity small{font-size:11px;font-weight:600;opacity:.94;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.account-button__chevron{font-size:20px;line-height:1;transform:translateY(-2px)}
+.account-menu{position:absolute;right:0;top:calc(100% + 8px);min-width:230px;padding:7px;border-radius:10px;background:#fff;border:1px solid var(--line);box-shadow:var(--shadow-lg);z-index:260}
+.account-menu button{width:100%;display:flex;align-items:center;gap:10px;padding:10px 11px;border-radius:7px;background:transparent;color:var(--ink);font-size:13.5px;font-weight:600;text-align:left}
+.account-menu button:hover{background:var(--surface);color:var(--primary)}
+.account-menu svg,.side-nav__icon svg{fill:none;stroke:currentColor;stroke-linecap:round;stroke-linejoin:round}
+.account-menu svg{width:18px;height:18px;stroke-width:1.9}
+/* Menu lateral */
+.side-nav{position:fixed;z-index:210;left:0;top:var(--app-topbar-h);bottom:0;width:var(--side-w);background:#fff;border-right:1px solid #dbe3ec;box-shadow:2px 0 10px rgba(20,44,80,.045);display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;transition:width .18s ease}
+.side-nav:hover,.side-nav:focus-within,.side-nav.is-pinned-open{width:var(--side-w-open)}
+.side-nav__toggle{margin:10px 9px 0;width:42px;height:36px;padding:0;background:transparent;color:var(--side-ink);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:400}
+.side-nav__toggle:hover{background:var(--side-hover)}
+.side-nav__items{padding:14px 9px;display:flex;flex-direction:column;gap:6px}
+.side-nav__bottom{padding:10px 9px 16px;border-top:1px solid rgba(23,62,114,.12)}
+.side-nav__item{min-height:48px;width:100%;border-radius:9px;background:transparent;color:var(--side-ink);display:flex;align-items:center;gap:12px;padding:8px 11px;white-space:nowrap;text-align:left;font-weight:400}
+.side-nav__item:hover{background:var(--side-hover)}.side-nav__item.is-active{background:#dcecf8;color:#0f4f91}
+.side-nav__icon{width:30px;height:30px;flex:0 0 30px;display:inline-flex;align-items:center;justify-content:center}
+.side-nav__icon svg{width:22px;height:22px;stroke-width:1.8}
+.side-nav__label{opacity:0;transform:translateX(-5px);transition:opacity .12s ease .02s,transform .15s ease;font-size:13.5px;font-weight:700}
+.side-nav:hover .side-nav__label,.side-nav:focus-within .side-nav__label,.side-nav.is-pinned-open .side-nav__label{opacity:1;transform:none}
+/* Página */
+.page{margin:0 0 0 var(--side-w);padding:calc(var(--app-topbar-h) + 34px) 38px 70px}
+.page>*{max-width:1380px;margin-left:auto;margin-right:auto}
+.page__head{display:flex;justify-content:space-between;align-items:flex-end;gap:18px;flex-wrap:wrap;margin-bottom:24px}
+.eyebrow{color:var(--accent-dark);font-weight:700;font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px}
+.page__title{font-size:28px;font-weight:800;color:var(--primary-dark)}
+.page__subtitle{color:var(--muted);margin:8px 0 0;font-size:15px}
+.panel{background:#fff;border:1px solid var(--line);border-radius:12px;padding:6px 10px}
+.table-wrap{width:100%;overflow-x:auto}
+table.data-table{width:100%;border-collapse:collapse;font-size:14px;min-width:720px}
+.data-table th{text-align:left;color:var(--muted);font-weight:700;font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;padding:10px 12px;border-bottom:1.5px solid var(--line)}
+.data-table td{padding:14px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+.data-table tr:last-child td{border-bottom:0}
+.data-table tbody tr[data-id]{cursor:pointer}.data-table tbody tr[data-id]:hover{background:var(--surface)}
+.badge,.pri{display:inline-flex;align-items:center;padding:3px 9px;border-radius:999px;font-size:11.5px;font-weight:700}
+.p0{background:#fdece9;color:var(--danger)}.p1{background:#fbf0dd;color:#b7791f}.p2{background:#e7f7f1;color:var(--accent-dark)}.p3{background:#e6ecfa;color:var(--primary)}
+.badge--user{background:var(--surface);color:var(--muted)}
+/* Janela (modal) */
+dialog{border:0;border-radius:12px;padding:24px;width:min(580px,94vw);max-height:90vh;box-shadow:var(--shadow-lg);color:var(--ink)}
+dialog::backdrop{background:rgba(21,42,104,.45)}
+dialog h2{font-size:16.5px;font-weight:700;color:var(--primary-dark)}
+.actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}
+@media(max-width:760px){:root{--side-w:58px}.row{grid-template-columns:1fr}.app-topbar{padding:0 14px}.page{padding:calc(var(--app-topbar-h) + 24px) 16px 60px}.account-button__identity{min-width:0;max-width:130px}.app-brand__text{font-size:15px}.app-brand__text strong{font-size:18px}}
+@media(prefers-reduced-motion:reduce){.side-nav,.side-nav__label{transition:none}}
 </style>
 </head>
 <body>
 
 <div id="login">
-  <form class="box" id="fLogin">
-    <h2 style="margin-bottom:16px">Olhar eMulti</h2>
-    <div id="loginErr" class="err hidden" role="alert"></div>
-    <div class="field"><label for="lu">Usuário</label><input id="lu" autocomplete="username" required></div>
-    <div class="field"><label for="ls">Senha</label><input id="ls" type="password" autocomplete="current-password" required></div>
-    <button class="primary" style="width:100%">Entrar</button>
-  </form>
+  <canvas id="netBg" aria-hidden="true"></canvas>
+  <div class="login-layout">
+    <div class="login-hero">
+      <h1>Bem-vindo ao Olhar eMulti</h1>
+      <p>Acompanhamento das guias de encaminhamento e dos grupos de atendimento eMulti, em um ambiente integrado à rede municipal de saúde.</p>
+    </div>
+    <form class="box" id="fLogin">
+      <div class="logo"><span><img src="assets/imagotipo-branco.png" alt="Brasão do município"></span></div>
+      <div class="produto">Olhar eMulti</div>
+      <div class="sub">Acesso restrito a profissionais autorizados</div>
+      <div id="loginErr" class="err hidden" role="alert"></div>
+      <div class="field"><label for="lu">Usuário</label><input id="lu" autocomplete="username" spellcheck="false" required autofocus></div>
+      <div class="field"><label for="ls">Senha</label><div class="pw"><input id="ls" type="password" autocomplete="current-password" required><button type="button" id="verSenha" aria-label="Mostrar senha">Mostrar</button></div></div>
+      <button class="primary entrar" id="btnEntrar">Entrar</button>
+      <div class="divider"><span>ou</span></div>
+      <button type="button" class="portal-access" id="portalBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11 12 4l9 7M5 10v10h14V10M9 20v-6h6v6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Acessar com Apoio APS</span></button>
+      <div class="nota">O login do Apoio APS é usado somente para autenticação. Os dados das guias ficam no ambiente próprio do Olhar eMulti.<br>Os dados dos pacientes são de uso exclusivo dos profissionais da rede.</div>
+    </form>
+  </div>
 </div>
 
 <div id="app" class="hidden">
-  <header class="bar">
-    <div class="brand"><img src="assets/imagotipo.png" alt="Olhar eMulti"><div><b>Olhar</b><i>eMulti</i></div></div>
-    <div class="who"><b id="whoName"></b><br><span id="whoRole"></span><br><button id="btnSair">Sair</button></div>
+  <header class="app-topbar">
+    <a class="app-brand" href="/" aria-label="Olhar eMulti"><img src="assets/imagotipo-branco.png" alt="Brasão do município"><span class="app-brand__text"><strong>Olhar</strong><span class="app-brand__divider" aria-hidden="true"></span><span>eMulti</span></span></a>
+    <div class="account-wrap">
+      <button class="account-button" id="accountButton" type="button" aria-haspopup="true" aria-expanded="false">
+        <span class="account-button__identity"><strong id="whoName"></strong><small id="whoRole"></small></span><span class="account-button__chevron">⌄</span>
+      </button>
+      <div class="account-menu hidden" id="accountMenu"><button type="button" data-sair><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 17l5-5-5-5M15 12H3M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/></svg><span>Sair</span></button></div>
+    </div>
   </header>
-  <main>
-    <div class="head"><h2>Guias</h2><button class="primary" id="btnNova">+ Nova guia</button></div>
-    <div class="wrap"><table>
+  <aside class="side-nav" id="sideNav" aria-label="Menu principal">
+    <div>
+      <button class="side-nav__toggle" id="sideNavToggle" type="button" aria-label="Expandir ou recolher menu">☰</button>
+      <div class="side-nav__items">
+        <button class="side-nav__item is-active" type="button" id="navGuias" title="Guias"><span class="side-nav__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Zm2 4h10M7 12h10M7 16h6"/></svg></span><span class="side-nav__label">Guias</span></button>
+        <button class="side-nav__item" type="button" id="navNova" title="Nova guia"><span class="side-nav__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6M12 11v6M9 14h6"/></svg></span><span class="side-nav__label">Nova guia</span></button>
+      </div>
+    </div>
+    <div class="side-nav__bottom"><button class="side-nav__item" type="button" data-sair title="Sair"><span class="side-nav__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 17l5-5-5-5M15 12H3M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/></svg></span><span class="side-nav__label">Sair</span></button></div>
+  </aside>
+  <main class="page">
+    <div class="page__head">
+      <div><div class="eyebrow">Olhar eMulti</div><h1 class="page__title">Guias</h1><p class="page__subtitle">Acompanhe os encaminhamentos e priorize os casos mais urgentes.</p></div>
+      <button class="primary" id="btnNova">+ Nova guia</button>
+    </div>
+    <div class="panel table-wrap"><table class="data-table">
       <thead><tr><th>Paciente</th><th>Prioridade</th><th>Especialidade</th><th>Status</th><th>Equipe</th></tr></thead>
       <tbody id="tbl"></tbody>
     </table></div>
@@ -118,16 +210,22 @@ function mostrarApp(){
   $('whoName').textContent=user.nome;$('whoRole').textContent=user.role+(user.esp?' · '+user.esp:'');
   carregar();
 }
-function sair(){sessionStorage.clear();token=null;user=null;$('app').classList.add('hidden');$('login').classList.remove('hidden');}
-$('btnSair').onclick=sair;
+function sair(){sessionStorage.clear();token=null;user=null;$('app').classList.add('hidden');$('login').classList.remove('hidden');window.iniciarRede&&window.iniciarRede();}
+document.querySelectorAll('[data-sair]').forEach(b=>b.onclick=sair);
+$('accountButton').onclick=e=>{e.stopPropagation();const a=$('accountMenu').classList.toggle('hidden');$('accountButton').setAttribute('aria-expanded',String(!a));};
+document.addEventListener('click',()=>{$('accountMenu').classList.add('hidden');$('accountButton').setAttribute('aria-expanded','false');});
+$('sideNavToggle').onclick=()=>$('sideNav').classList.toggle('is-pinned-open');
+$('navGuias').onclick=()=>carregar();
 
+$('verSenha').onclick=()=>{const m=$('ls').type==='password';$('ls').type=m?'text':'password';$('verSenha').textContent=m?'Ocultar':'Mostrar';$('verSenha').setAttribute('aria-label',m?'Ocultar senha':'Mostrar senha');};
 $('fLogin').onsubmit=async e=>{
-  e.preventDefault();$('loginErr').classList.add('hidden');
+  e.preventDefault();$('loginErr').classList.add('hidden');$('btnEntrar').disabled=true;$('btnEntrar').textContent='Entrando…';
   try{
     const r=await api('/api/login',{method:'POST',body:JSON.stringify({username:$('lu').value,senha:$('ls').value})});
     token=r.token;user=r.user;sessionStorage.setItem('token',token);sessionStorage.setItem('user',JSON.stringify(user));
     $('ls').value='';mostrarApp();
   }catch(err){$('loginErr').textContent=err.message;$('loginErr').classList.remove('hidden');}
+  finally{$('btnEntrar').disabled=false;$('btnEntrar').textContent='Entrar';}
 };
 
 async function carregar(){
@@ -136,8 +234,8 @@ async function carregar(){
     $('tbl').innerHTML=guias.map(g=>`<tr data-id="${g.id}" tabindex="0">
       <td><b>${esc(g.nome_paciente)}</b><br><small>${esc(fmtCpf(g.cpf_paciente))}</small></td>
       <td><span class="pri p${+g.prioridade}">${PRI[g.prioridade]??g.prioridade}</span></td>
-      <td>${esc(g.especialidade)}</td><td>${esc(g.status)}</td><td>${esc(g.equipe_id)}</td></tr>`).join('')
-      ||'<tr><td colspan="5" style="cursor:default">Nenhuma guia ainda. Use “+ Nova guia” para cadastrar a primeira.</td></tr>';
+      <td>${esc(g.especialidade)}</td><td><span class="badge badge--user">${esc(g.status)}</span></td><td>${esc(g.equipe_id)}</td></tr>`).join('')
+      ||'<tr><td colspan="5" style="color:var(--muted)">Nenhuma guia ainda. Use “+ Nova guia” para cadastrar a primeira.</td></tr>';
   }catch(e){if(token)alert(e.message);}
 }
 $('tbl').onclick=e=>{const tr=e.target.closest('tr[data-id]');if(tr)abrir(guias.find(g=>g.id==tr.dataset.id));};
@@ -166,7 +264,7 @@ async function abrir(g){
   }else $('gData').value=new Date().toISOString().slice(0,10);
   condicionais();$('dlg').showModal();
 }
-$('btnNova').onclick=()=>abrir(null);
+$('btnNova').onclick=$('navNova').onclick=()=>abrir(null);
 $('btnCancelar').onclick=()=>$('dlg').close();
 
 $('fGuia').onsubmit=async e=>{
@@ -180,7 +278,40 @@ $('fGuia').onsubmit=async e=>{
   }catch(err){$('gErr').textContent=err.message;$('gErr').classList.remove('hidden');}
 };
 
-if(token&&user)mostrarApp();
+
+// Fundo de rede interativo (mesmo estilo do portal de Regulação)
+(function(){
+  const cv=$('netBg'),sh=$('login'),ctx=cv.getContext('2d');
+  const reduz=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const COR='32,59,143',DIST=190,RAIO=150,FORCA=46;
+  let w=0,h=0,ps=[],m={x:0,y:0,on:false},rodando=false;
+  function ini(){const dpr=Math.min(devicePixelRatio||1,2);w=sh.clientWidth;h=sh.clientHeight;cv.width=w*dpr;cv.height=h*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);
+    const n=Math.max(40,Math.min(100,Math.floor(w*h/15000)));ps=Array.from({length:n},()=>({x:Math.random()*w,y:Math.random()*h,vx:(Math.random()-.5)*.18,vy:(Math.random()-.5)*.18,ox:0,oy:0}));if(reduz)desenha();}
+  function passo(){for(const p of ps){p.x+=p.vx;p.y+=p.vy;if(p.x<=0||p.x>=w){p.vx*=-1;p.x=Math.max(0,Math.min(w,p.x));}if(p.y<=0||p.y>=h){p.vy*=-1;p.y=Math.max(0,Math.min(h,p.y));}
+    let tx=0,ty=0;if(m.on){const dx=p.x-m.x,dy=p.y-m.y,d=Math.hypot(dx,dy)||.001;if(d<RAIO){const f=(1-d/RAIO)*FORCA;tx=dx/d*f;ty=dy/d*f;}}p.ox+=(tx-p.ox)*.08;p.oy+=(ty-p.oy)*.08;}}
+  function desenha(){ctx.clearRect(0,0,w,h);for(let i=0;i<ps.length;i++){const a=ps[i],ax=a.x+a.ox,ay=a.y+a.oy;
+    for(let j=i+1;j<ps.length;j++){const b=ps[j],bx=b.x+b.ox,by=b.y+b.oy,d=Math.hypot(ax-bx,ay-by);
+      if(d<DIST){ctx.strokeStyle=`rgba(${COR},${((1-d/DIST)*.28).toFixed(3)})`;ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(bx,by);ctx.stroke();}}}
+    ctx.fillStyle=`rgba(${COR},.35)`;for(const p of ps){ctx.beginPath();ctx.arc(p.x+p.ox,p.y+p.oy,1.6,0,6.283);ctx.fill();}}
+  function loop(){if(sh.classList.contains('hidden')){rodando=false;return;}passo();desenha();requestAnimationFrame(loop);}
+  window.iniciarRede=()=>{ini();if(!reduz&&!rodando){rodando=true;requestAnimationFrame(loop);}};
+  addEventListener('resize',()=>{if(!sh.classList.contains('hidden'))ini();});
+  sh.addEventListener('mousemove',e=>{const r=sh.getBoundingClientRect();m={x:e.clientX-r.left,y:e.clientY-r.top,on:true};});
+  sh.addEventListener('mouseleave',()=>{m.on=false;});
+})();
+const PORTAL_URL='https://atencaoprimaria.apoiosaude.workers.dev';
+$('portalBtn').onclick=()=>{$('portalBtn').disabled=true;$('portalBtn').querySelector('span').textContent='Redirecionando…';
+  location.href=PORTAL_URL+'/login.html?next='+encodeURIComponent(location.origin+'/');};
+addEventListener('pageshow',()=>{$('portalBtn').disabled=false;$('portalBtn').querySelector('span').textContent='Acessar com Apoio APS';});
+(function(){ // retorno do Apoio APS: token no fragmento (#sso=) ou erro na URL (?erro=)
+  const q=new URLSearchParams(location.search),t=new URLSearchParams(location.hash.slice(1)).get('sso');
+  const erros={handoff:'Não foi possível concluir o acesso pelo Apoio APS. Tente novamente.','sem-acesso':'Você entrou no Apoio APS, mas ainda não tem acesso ao Olhar eMulti. Procure a gestão da sua equipe.'};
+  if(t){try{const b=t.split('.')[1].replace(/-/g,'+').replace(/_/g,'/');const p=JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(b),c=>c.charCodeAt(0))));
+    token=t;user={id:p.id,nome:p.nome,role:p.role,esp:p.esp,eq:p.eq,uni:p.uni};sessionStorage.setItem('token',token);sessionStorage.setItem('user',JSON.stringify(user));}catch{}}
+  if(t||q.has('erro'))history.replaceState(null,'',location.pathname);
+  const e=erros[q.get('erro')];if(e){$('loginErr').textContent=e;$('loginErr').classList.remove('hidden');}
+})();
+if(token&&user)mostrarApp();else window.iniciarRede();
 </script>
 </body>
 </html>

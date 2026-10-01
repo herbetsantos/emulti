@@ -1,16 +1,23 @@
-name = "olhar-emulti"
+# O nome precisa ser igual ao do Worker criado no painel da Cloudflare.
+name = "olharemulti"
 main = "src/index.js"
 compatibility_date = "2025-06-01"
 
-# Frontend estático (pasta public, incluindo assets/imagotipo.png)
 [assets]
 directory = "./public"
+binding = "ASSETS"
+# A página inicial passa antes pelo Worker para receber o retorno do Apoio APS (?handoff=...)
+run_worker_first = ["/"]
 
 [[d1_databases]]
 binding = "DB_REGULACAO"
 database_name = "emulti-db"
-# Rode `npx wrangler d1 create emulti-db` e cole o ID aqui para produção.
-# Em desenvolvimento local (--local) qualquer valor funciona.
-database_id = "COLE_AQUI_O_ID_GERADO_NO_TERMINAL"
+database_id = "9c788fcf-16e5-4f0a-99f9-d7ab1c606420"
 
-# JWT_SECRET: local -> arquivo .dev.vars ; produção -> `npx wrangler secret put JWT_SECRET`
+# Banco do Apoio APS: usado SOMENTE para validar o código de login integrado (handoff).
+[[d1_databases]]
+binding = "DB"
+database_name = "portal-saude-db"
+database_id = "4467670b-0e48-490a-8d56-fb4ad4cf6bce"
+
+# JWT_SECRET: local -> .dev.vars ; produção -> painel (Settings > Variables and Secrets) ou `wrangler secret put JWT_SECRET`
