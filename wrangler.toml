@@ -1,0 +1,16 @@
+name = "olhar-emulti"
+main = "src/index.js"
+compatibility_date = "2025-06-01"
+
+# Frontend estático (pasta public, incluindo assets/imagotipo.png)
+[assets]
+directory = "./public"
+
+[[d1_databases]]
+binding = "DB_REGULACAO"
+database_name = "emulti-db"
+# Rode `npx wrangler d1 create emulti-db` e cole o ID aqui para produção.
+# Em desenvolvimento local (--local) qualquer valor funciona.
+database_id = "COLE_AQUI_O_ID_GERADO_NO_TERMINAL"
+
+# JWT_SECRET: local -> arquivo .dev.vars ; produção -> `npx wrangler secret put JWT_SECRET`

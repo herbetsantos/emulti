@@ -1,0 +1,15 @@
+{
+  "name": "olhar-emulti",
+  "version": "1.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "seed:gerar": "node scripts/gerar-seed.mjs",
+    "profissionais:importar": "node scripts/importar-profissionais.mjs",
+    "db:local": "wrangler d1 execute emulti-db --local --file=database/schema.sql && wrangler d1 execute emulti-db --local --file=database/seed.sql"
+  },
+  "dependencies": { "hono": "^4.6.0" },
+  "devDependencies": { "wrangler": "^4.0.0" }
+}

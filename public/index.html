@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Olhar eMulti</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,wght@0,600;1,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--paper:#F4F6FB;--ink:#1B306E;--soft:#5B6B87;--line:#E1E4EC;--teal:#1C9C76;--tealD:#186C5E;--tealS:#E4F5EE;--red:#D93025;--redS:#FDECE9;--amber:#B7791F;--amberS:#FBF0DD;--card:#fff}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:400 15px/1.45 Inter,system-ui,sans-serif}
+h2{font-family:'Source Serif 4',serif;font-weight:600;margin:0}
+label{display:block;font-size:13px;font-weight:600;margin-bottom:4px}
+input,select,textarea{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:6px;font:inherit;color:inherit;background:#fff}
+:focus-visible{outline:2px solid var(--teal);outline-offset:1px}
+button{font:inherit;font-weight:600;border:0;border-radius:6px;padding:9px 16px;cursor:pointer}
+.primary{background:var(--teal);color:#fff}.primary:hover{background:var(--tealD)}
+.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.field{margin-bottom:12px}.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.hidden{display:none!important}
+#login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px}
+.box{background:var(--card);padding:32px;border-radius:10px;width:100%;max-width:380px;border:1px solid var(--line)}
+.err{background:var(--redS);color:var(--red);padding:8px 10px;border-radius:6px;font-size:13px;margin-bottom:12px}
+.bar{background:var(--ink);padding:12px 24px;display:flex;justify-content:space-between;align-items:center;color:#fff;gap:12px}
+.brand{display:flex;align-items:center;gap:10px;line-height:1.1}.brand img{height:32px}
+.brand b{display:block;font-weight:700;font-size:17px}.brand i{display:block;font:italic 400 14px 'Source Serif 4',serif;color:var(--tealS)}
+.bar .who{text-align:right;font-size:14px}.bar .who span{font-size:12px;opacity:.8}
+.bar button{margin-top:4px;padding:3px 10px;font-size:12px;background:transparent;color:#fff;border:1px solid #ffffff66}
+main{max-width:1100px;margin:20px auto;padding:0 24px}
+.head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.wrap{overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:8px}
+table{width:100%;border-collapse:collapse;min-width:720px}
+th{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);font-size:13px;color:var(--soft)}
+td{padding:10px 12px;border-bottom:1px solid var(--line)}tr:last-child td{border-bottom:0}
+tbody tr{cursor:pointer}tbody tr:hover{background:var(--paper)}
+.pri{display:inline-block;padding:2px 9px;border-radius:99px;font-size:12px;font-weight:600}
+.p0{background:var(--redS);color:var(--red)}.p1{background:var(--amberS);color:var(--amber)}.p2{background:var(--tealS);color:var(--tealD)}.p3{background:#E6ECFA;color:var(--ink)}
+dialog{border:0;border-radius:10px;padding:24px;width:min(560px,94vw);max-height:92vh}
+dialog::backdrop{background:#1B306E88}
+.actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+@media(max-width:560px){.row{grid-template-columns:1fr}.bar{padding:12px 16px}main{padding:0 12px}}
+</style>
+</head>
+<body>
+
+<div id="login">
+  <form class="box" id="fLogin">
+    <h2 style="margin-bottom:16px">Olhar eMulti</h2>
+    <div id="loginErr" class="err hidden" role="alert"></div>
+    <div class="field"><label for="lu">Usuário</label><input id="lu" autocomplete="username" required></div>
+    <div class="field"><label for="ls">Senha</label><input id="ls" type="password" autocomplete="current-password" required></div>
+    <button class="primary" style="width:100%">Entrar</button>
+  </form>
+</div>
+
+<div id="app" class="hidden">
+  <header class="bar">
+    <div class="brand"><img src="assets/imagotipo.png" alt="Olhar eMulti"><div><b>Olhar</b><i>eMulti</i></div></div>
+    <div class="who"><b id="whoName"></b><br><span id="whoRole"></span><br><button id="btnSair">Sair</button></div>
+  </header>
+  <main>
+    <div class="head"><h2>Guias</h2><button class="primary" id="btnNova">+ Nova guia</button></div>
+    <div class="wrap"><table>
+      <thead><tr><th>Paciente</th><th>Prioridade</th><th>Especialidade</th><th>Status</th><th>Equipe</th></tr></thead>
+      <tbody id="tbl"></tbody>
+    </table></div>
+  </main>
+</div>
+
+<dialog id="dlg">
+  <form id="fGuia">
+    <h2 id="dlgTitulo" style="margin-bottom:14px"></h2>
+    <div id="gErr" class="err hidden" role="alert"></div>
+    <div class="row">
+      <div class="field"><label for="gNome">Nome do paciente</label><input id="gNome" required></div>
+      <div class="field"><label for="gCpf">CPF</label><input id="gCpf" inputmode="numeric" maxlength="14" required></div>
+    </div>
+    <div class="row">
+      <div class="field"><label for="gEsp">Especialidade</label><select id="gEsp"></select></div>
+      <div class="field"><label for="gPri">Prioridade</label><select id="gPri">
+        <option value="0">0 – Vermelho (máxima)</option><option value="1">1 – Amarelo</option><option value="2">2 – Verde</option><option value="3" selected>3 – Azul (rotina)</option></select></div>
+    </div>
+    <div class="row">
+      <div class="field"><label for="gData">Data de emissão</label><input id="gData" type="date" required></div>
+      <div class="field" id="fEquipe"><label for="gEquipe">Equipe</label><select id="gEquipe"></select></div>
+    </div>
+    <div class="field"><label for="gMotivo">Motivo do encaminhamento</label><textarea id="gMotivo" rows="2" required></textarea></div>
+    <div class="row">
+      <div class="field"><label for="gStatus">Status</label><select id="gStatus">
+        <option>Aguardando grupo</option><option>Em atendimento</option><option>Pausado</option><option>Encerrado</option></select></div>
+      <div class="field" id="fCom"><label for="gCom">Comunicação com o paciente realizada?</label><select id="gCom"><option value="">—</option><option>Sim</option><option>Não</option></select></div>
+    </div>
+    <div class="field hidden" id="fJust"><label for="gJust">Justificativa da comunicação</label><textarea id="gJust" rows="2"></textarea></div>
+    <div class="field hidden" id="fEnc"><label for="gEnc">Motivo do encerramento</label><textarea id="gEnc" rows="2"></textarea></div>
+    <div class="actions"><button type="button" class="ghost" id="btnCancelar">Cancelar</button><button class="primary">Salvar guia</button></div>
+  </form>
+</dialog>
+
+<script>
+const ESPECIALIDADES=['Psicologia','Fisioterapia','Nutrição','Fonoaudiologia','Serviço Social','Educação Física','Terapia Ocupacional'];
+let token=sessionStorage.getItem('token'), user=JSON.parse(sessionStorage.getItem('user')||'null'), guias=[], editId=null;
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmtCpf=c=>String(c).replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/,'$1.$2.$3-$4');
+const PRI=['Vermelho','Amarelo','Verde','Azul'];
+
+async function api(path,opt={}){
+  const r=await fetch(path,{...opt,headers:{'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{})}});
+  const j=await r.json().catch(()=>({}));
+  if(r.status===401&&path!=='/api/login'){sair();throw new Error(j.erro||'Sessão expirada.');}
+  if(!r.ok)throw new Error(j.erro||'Falha na requisição.');
+  return j;
+}
+function mostrarApp(){
+  $('login').classList.add('hidden');$('app').classList.remove('hidden');
+  $('whoName').textContent=user.nome;$('whoRole').textContent=user.role+(user.esp?' · '+user.esp:'');
+  carregar();
+}
+function sair(){sessionStorage.clear();token=null;user=null;$('app').classList.add('hidden');$('login').classList.remove('hidden');}
+$('btnSair').onclick=sair;
+
+$('fLogin').onsubmit=async e=>{
+  e.preventDefault();$('loginErr').classList.add('hidden');
+  try{
+    const r=await api('/api/login',{method:'POST',body:JSON.stringify({username:$('lu').value,senha:$('ls').value})});
+    token=r.token;user=r.user;sessionStorage.setItem('token',token);sessionStorage.setItem('user',JSON.stringify(user));
+    $('ls').value='';mostrarApp();
+  }catch(err){$('loginErr').textContent=err.message;$('loginErr').classList.remove('hidden');}
+};
+
+async function carregar(){
+  try{
+    guias=await api('/api/guias');
+    $('tbl').innerHTML=guias.map(g=>`<tr data-id="${g.id}" tabindex="0">
+      <td><b>${esc(g.nome_paciente)}</b><br><small>${esc(fmtCpf(g.cpf_paciente))}</small></td>
+      <td><span class="pri p${+g.prioridade}">${PRI[g.prioridade]??g.prioridade}</span></td>
+      <td>${esc(g.especialidade)}</td><td>${esc(g.status)}</td><td>${esc(g.equipe_id)}</td></tr>`).join('')
+      ||'<tr><td colspan="5" style="cursor:default">Nenhuma guia ainda. Use “+ Nova guia” para cadastrar a primeira.</td></tr>';
+  }catch(e){if(token)alert(e.message);}
+}
+$('tbl').onclick=e=>{const tr=e.target.closest('tr[data-id]');if(tr)abrir(guias.find(g=>g.id==tr.dataset.id));};
+$('tbl').onkeydown=e=>{if(e.key==='Enter'){const tr=e.target.closest('tr[data-id]');if(tr)abrir(guias.find(g=>g.id==tr.dataset.id));}};
+
+function condicionais(){
+  const s=$('gStatus').value;
+  $('fJust').classList.toggle('hidden',!(s==='Em atendimento'&&$('gCom').value==='Não'));
+  $('fEnc').classList.toggle('hidden',s!=='Encerrado');
+}
+$('gStatus').onchange=$('gCom').onchange=condicionais;
+$('gCpf').oninput=e=>{e.target.value=e.target.value.replace(/\D/g,'').slice(0,11).replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d{1,2})$/,'$1-$2');};
+
+async function abrir(g){
+  editId=g?g.id:null;$('gErr').classList.add('hidden');$('fGuia').reset();
+  $('dlgTitulo').textContent=g?'Editar guia':'Nova guia';
+  const execu=user.role==='Profissional Executante';
+  $('gEsp').innerHTML=(execu&&!g?[user.esp]:g?[g.especialidade]:ESPECIALIDADES).map(x=>`<option>${esc(x)}</option>`).join('');
+  $('gEsp').disabled=!!g||execu;
+  $('fEquipe').classList.toggle('hidden',execu||!!g);
+  if(!execu&&!g){const eq=await api('/api/equipes');$('gEquipe').innerHTML=eq.map(x=>`<option value="${esc(x.id)}">${esc(x.nome)}</option>`).join('');}
+  if(g){
+    $('gNome').value=g.nome_paciente;$('gCpf').value=fmtCpf(g.cpf_paciente);$('gPri').value=g.prioridade;$('gData').value=g.data_emissao;
+    $('gMotivo').value=g.motivo_encaminhamento;$('gStatus').value=g.status;$('gCom').value=g.comunicacao_realizada||'';
+    $('gJust').value=g.justificativa_comunicacao||'';$('gEnc').value=g.motivo_encerramento||'';
+  }else $('gData').value=new Date().toISOString().slice(0,10);
+  condicionais();$('dlg').showModal();
+}
+$('btnNova').onclick=()=>abrir(null);
+$('btnCancelar').onclick=()=>$('dlg').close();
+
+$('fGuia').onsubmit=async e=>{
+  e.preventDefault();
+  const body={nome:$('gNome').value,cpf:$('gCpf').value,especialidade:$('gEsp').value,prioridade:$('gPri').value,data_emissao:$('gData').value,
+    motivo_encaminhamento:$('gMotivo').value,status:$('gStatus').value,comunicacao_realizada:$('gCom').value,
+    justificativa_comunicacao:$('gJust').value,motivo_encerramento:$('gEnc').value,equipe_id:$('gEquipe').value};
+  try{
+    await api(editId?`/api/guias/${editId}`:'/api/guias',{method:editId?'PUT':'POST',body:JSON.stringify(body)});
+    $('dlg').close();carregar();
+  }catch(err){$('gErr').textContent=err.message;$('gErr').classList.remove('hidden');}
+};
+
+if(token&&user)mostrarApp();
+</script>
+</body>
+</html>

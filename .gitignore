@@ -1,0 +1,6 @@
+.dev.vars
+node_modules
+.wrangler
+database/credenciais.csv
+database/profissionais.sql
+database/profissionais.csv

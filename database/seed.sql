@@ -1,0 +1,7 @@
+INSERT INTO unidades (id,nome) VALUES ('un1','UBS Centro'),('un2','UBS Jardim'),('un3','UBS Vila Nova');
+INSERT INTO equipes (id,nome) VALUES ('comp1','Complementar 1'),('est1','Estratégica 1');
+INSERT INTO equipe_unidades (equipe_id,unidade_id) VALUES ('comp1','un1'),('comp1','un2'),('est1','un3');
+INSERT INTO usuarios (id,username,senha_hash,nome_completo,nivel_acesso,especialidade,equipe_id,unidade_id) VALUES ('u1','admin','ccdfe7c846a82228071b2c8170fda642:cefd29c27cb96bc925fb419c150098aa826cc4ca966ba7f1f924a9ab2d74de92','Admin Central','Super Administrador',NULL,NULL,NULL);
+INSERT INTO usuarios (id,username,senha_hash,nome_completo,nivel_acesso,especialidade,equipe_id,unidade_id) VALUES ('u2','ana.psi','6cae4c4cb0f011cde0ca4c7e407a1063:4dc0d2a901aad4627b0efcaa6b072c5369c7619ac135feca06093da293208ac3','Ana (Psicologia)','Profissional Executante','Psicologia','comp1',NULL);
+INSERT INTO usuarios (id,username,senha_hash,nome_completo,nivel_acesso,especialidade,equipe_id,unidade_id) VALUES ('u3','carla.nutri','49c5a439b4bd795b60295722bb0522c9:66466fd059209be4eb13c1ef7c80990251a6c179480c661b6faee8be7a0b72f6','Carla (Nutrição)','Profissional Executante','Nutrição','est1',NULL);
+INSERT INTO usuarios (id,username,senha_hash,nome_completo,nivel_acesso,especialidade,equipe_id,unidade_id) VALUES ('u4','gestor.local','9dd5678d85fff0d7670611878fee3946:9d0abbd6bb4943bffc583fcde750228c70d5799b4726b09aece5721f0d25b21b','Gestor Local UBS Centro','Gerenciamento Local',NULL,NULL,'un1');
