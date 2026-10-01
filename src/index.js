@@ -3,6 +3,7 @@ import { sign, verify } from 'hono/jwt';
 
 const STATUS = ['Aguardando grupo', 'Em atendimento', 'Pausado', 'Encerrado'];
 const app = new Hono();
+const novoId = (p) => p + crypto.randomUUID().slice(0, 8);
 
 // ---------- Senhas (PBKDF2-SHA256, formato "saltHex:hashHex") ----------
 const hex = (b) => [...new Uint8Array(b)].map((x) => x.toString(16).padStart(2, '0')).join('');
@@ -87,14 +88,22 @@ app.get('/', async (c) => {
   if (!handoff) return c.env.ASSETS.fetch(c.req.raw);
   c.header('Cache-Control', 'no-store');
   try {
-    const h = await c.env.DB.prepare(`SELECT h.expires_at, h.used, u.username, u.active
+    const h = await c.env.DB.prepare(`SELECT h.expires_at, h.used, u.username, u.name, u.active
       FROM handoff_tokens h JOIN users u ON u.id = h.user_id WHERE h.token = ?`).bind(handoff).first();
     if (!h || h.used || !h.active || new Date(h.expires_at).getTime() < Date.now()) return c.redirect('/?erro=handoff', 302);
     const upd = await c.env.DB.prepare('UPDATE handoff_tokens SET used = 1 WHERE token = ? AND used = 0').bind(handoff).run();
     if (!upd.meta?.changes) return c.redirect('/?erro=handoff', 302);
-    const u = await c.env.DB_REGULACAO.prepare('SELECT * FROM usuarios WHERE lower(username) = ? AND ativo = 1')
+    let u = await c.env.DB_REGULACAO.prepare('SELECT * FROM usuarios WHERE lower(username) = ? AND ativo = 1')
       .bind(String(h.username).trim().toLowerCase()).first();
-    if (!u) return c.redirect('/?erro=sem-acesso', 302);
+    if (!u) {
+      // Primeiro acesso: cria o cadastro SEM nenhuma permissão (Profissional Executante sem equipe não enxerga guia alguma).
+      // O Super Administrador define nível, especialidade, equipe e unidade depois. Nunca se herda cargo do Apoio APS.
+      const login = String(h.username).trim().toLowerCase();
+      await c.env.DB_REGULACAO.prepare(`INSERT OR IGNORE INTO usuarios (id, username, senha_hash, nome_completo, nivel_acesso, ativo)
+        VALUES (?, ?, '00:00', ?, 'Profissional Executante', 1)`).bind(novoId('u'), login, String(h.name || login).trim()).run();
+      u = await c.env.DB_REGULACAO.prepare('SELECT * FROM usuarios WHERE lower(username) = ? AND ativo = 1').bind(login).first();
+      if (!u) return c.redirect('/?erro=sem-acesso', 302);
+    }
     const { token } = await emitirToken(c, u);
     return c.redirect(`/#sso=${token}`, 302); // fragmento não é enviado a servidores nem registrado em logs
   } catch (e) {
@@ -197,5 +206,94 @@ app.put('/api/guias/:id', async (c) => {
       d.comunicacao_realizada, d.justificativa_comunicacao, d.motivo_encerramento, id).run();
   return c.json({ sucesso: true });
 });
+
+// ---------- Administração (somente Super Administrador) ----------
+const NIVEIS = ['Super Administrador', 'Gerenciamento', 'Gerenciamento Local', 'Profissional Executante'];
+const corpo = async (c) => (await c.req.json().catch(() => ({}))) || {};
+app.use('/api/admin/*', async (c, next) =>
+  c.get('user').role === 'Super Administrador' ? next() : c.json({ erro: 'Acesso restrito ao Super Administrador.' }, 403));
+
+app.get('/api/admin/dados', async (c) => {
+  const db = c.env.DB_REGULACAO;
+  const [un, eq, eu, us] = await Promise.all([
+    db.prepare('SELECT id, nome FROM unidades ORDER BY nome').all(),
+    db.prepare('SELECT id, nome FROM equipes ORDER BY nome').all(),
+    db.prepare('SELECT equipe_id, unidade_id FROM equipe_unidades').all(),
+    db.prepare('SELECT id, username, nome_completo, nivel_acesso, especialidade, equipe_id, unidade_id, ativo FROM usuarios ORDER BY nome_completo').all(),
+  ]);
+  const equipes = eq.results.map((e) => ({ ...e, unidades: eu.results.filter((r) => r.equipe_id === e.id).map((r) => r.unidade_id) }));
+  const pc = await db.prepare('SELECT especialidade_origem, especialidade_destino, concedido_por FROM permissoes_cruzadas ORDER BY especialidade_origem, especialidade_destino').all();
+  const permissoes = pc.results.map((r) => ({ id: r.especialidade_origem + '|' + r.especialidade_destino, ...r }));
+  return c.json({ unidades: un.results, equipes, usuarios: us.results, permissoes });
+});
+
+async function salvarUnidade(c, id) {
+  const nome = txt((await corpo(c)).nome);
+  if (!nome) return c.json({ erro: 'Informe o nome da unidade.' }, 400);
+  const db = c.env.DB_REGULACAO;
+  if (id) await db.prepare('UPDATE unidades SET nome = ? WHERE id = ?').bind(nome, id).run();
+  else await db.prepare('INSERT INTO unidades (id, nome) VALUES (?, ?)').bind(novoId('un'), nome).run();
+  return c.json({ sucesso: true });
+}
+async function salvarEquipe(c, id) {
+  const b = await corpo(c), nome = txt(b.nome);
+  if (!nome) return c.json({ erro: 'Informe o nome da equipe.' }, 400);
+  const db = c.env.DB_REGULACAO, eid = id || novoId('eq');
+  const un = Array.isArray(b.unidades) ? b.unidades.map(String) : [];
+  await db.batch([
+    id ? db.prepare('UPDATE equipes SET nome = ? WHERE id = ?').bind(nome, eid) : db.prepare('INSERT INTO equipes (id, nome) VALUES (?, ?)').bind(eid, nome),
+    db.prepare('DELETE FROM equipe_unidades WHERE equipe_id = ?').bind(eid),
+    ...un.map((x) => db.prepare('INSERT INTO equipe_unidades (equipe_id, unidade_id) VALUES (?, ?)').bind(eid, x)),
+  ]);
+  return c.json({ sucesso: true });
+}
+async function salvarUsuario(c, id) {
+  const b = await corpo(c), db = c.env.DB_REGULACAO;
+  const d = { username: txt(b.username)?.toLowerCase(), nome: txt(b.nome), nivel: b.nivel, esp: txt(b.especialidade), eq: txt(b.equipe_id), uni: txt(b.unidade_id) };
+  if (!d.username || !d.nome || !NIVEIS.includes(d.nivel)) return c.json({ erro: 'Preencha usuário, nome e nível de acesso.' }, 400);
+  if (d.nivel === 'Profissional Executante' && (!d.esp || !d.eq)) return c.json({ erro: 'Profissional Executante precisa de especialidade e equipe.' }, 400);
+  if (d.nivel === 'Gerenciamento Local' && !d.uni) return c.json({ erro: 'Gerenciamento Local precisa de uma unidade.' }, 400);
+  if (d.nivel !== 'Profissional Executante') { d.esp = null; d.eq = null; }
+  if (d.nivel !== 'Gerenciamento Local') d.uni = null;
+  const senha = String(b.senha || '');
+  if (senha && senha.length < 8) return c.json({ erro: 'A senha deve ter ao menos 8 caracteres.' }, 400);
+  let hash = null;
+  if (senha) { const salt = crypto.getRandomValues(new Uint8Array(16)); hash = hex(salt) + ':' + (await derivar(senha, salt)); }
+  const ativo = b.ativo === false || b.ativo === 0 ? 0 : 1;
+  try {
+    if (id) {
+      if (id === c.get('user').id && (!ativo || d.nivel !== 'Super Administrador'))
+        return c.json({ erro: 'Você não pode remover o seu próprio acesso de administrador.' }, 400);
+      await db.prepare(`UPDATE usuarios SET username=?, nome_completo=?, nivel_acesso=?, especialidade=?, equipe_id=?, unidade_id=?, ativo=?${hash ? ', senha_hash=?' : ''} WHERE id=?`)
+        .bind(d.username, d.nome, d.nivel, d.esp, d.eq, d.uni, ativo, ...(hash ? [hash] : []), id).run();
+    } else {
+      // Sem senha: o acesso só é possível pelo Apoio APS ("00:00" nunca confere em senhaConfere).
+      await db.prepare('INSERT INTO usuarios (id, username, senha_hash, nome_completo, nivel_acesso, especialidade, equipe_id, unidade_id, ativo) VALUES (?,?,?,?,?,?,?,?,?)')
+        .bind(novoId('u'), d.username, hash || '00:00', d.nome, d.nivel, d.esp, d.eq, d.uni, ativo).run();
+    }
+  } catch (e) {
+    if (String(e).includes('UNIQUE')) return c.json({ erro: 'Já existe um usuário com esse login.' }, 409);
+    throw e;
+  }
+  return c.json({ sucesso: true });
+}
+app.post('/api/admin/permissoes', async (c) => {
+  const b = await corpo(c), o = txt(b.origem), d = txt(b.destino);
+  if (!o || !d || o === d) return c.json({ erro: 'Escolha duas especialidades diferentes.' }, 400);
+  await c.env.DB_REGULACAO.prepare('INSERT OR IGNORE INTO permissoes_cruzadas (especialidade_origem, especialidade_destino, concedido_por) VALUES (?, ?, ?)')
+    .bind(o, d, c.get('user').nome).run();
+  return c.json({ sucesso: true });
+});
+app.delete('/api/admin/permissoes', async (c) => {
+  await c.env.DB_REGULACAO.prepare('DELETE FROM permissoes_cruzadas WHERE especialidade_origem = ? AND especialidade_destino = ?')
+    .bind(c.req.query('origem') ?? '', c.req.query('destino') ?? '').run();
+  return c.json({ sucesso: true });
+});
+app.post('/api/admin/unidades', (c) => salvarUnidade(c));
+app.put('/api/admin/unidades/:id', (c) => salvarUnidade(c, c.req.param('id')));
+app.post('/api/admin/equipes', (c) => salvarEquipe(c));
+app.put('/api/admin/equipes/:id', (c) => salvarEquipe(c, c.req.param('id')));
+app.post('/api/admin/usuarios', (c) => salvarUsuario(c));
+app.put('/api/admin/usuarios/:id', (c) => salvarUsuario(c, c.req.param('id')));
 
 export default app;
