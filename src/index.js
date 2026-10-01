@@ -239,12 +239,23 @@ async function salvarEquipe(c, id) {
   const b = await corpo(c), nome = txt(b.nome);
   if (!nome) return c.json({ erro: 'Informe o nome da equipe.' }, 400);
   const db = c.env.DB_REGULACAO, eid = id || novoId('eq');
-  const un = Array.isArray(b.unidades) ? b.unidades.map(String) : [];
-  await db.batch([
+  const lista = (v) => (Array.isArray(v) ? [...new Set(v.map(String))] : null);
+  const ph = (a) => a.map(() => '?').join(',');
+  const un = lista(b.unidades) ?? [], pr = lista(b.profissionais); // pr = null -> não mexe nos profissionais
+  if (un.length) {
+    const { results } = await db.prepare(`SELECT id FROM unidades WHERE id IN (${ph(un)})`).bind(...un).all();
+    if (results.length !== un.length) return c.json({ erro: 'Unidade inexistente.' }, 400);
+  }
+  const ops = [
     id ? db.prepare('UPDATE equipes SET nome = ? WHERE id = ?').bind(nome, eid) : db.prepare('INSERT INTO equipes (id, nome) VALUES (?, ?)').bind(eid, nome),
     db.prepare('DELETE FROM equipe_unidades WHERE equipe_id = ?').bind(eid),
     ...un.map((x) => db.prepare('INSERT INTO equipe_unidades (equipe_id, unidade_id) VALUES (?, ?)').bind(eid, x)),
-  ]);
+  ];
+  if (pr) { // vínculo profissional -> equipe (cada Executante pertence a uma equipe; marcar aqui move o profissional)
+    ops.push(db.prepare("UPDATE usuarios SET equipe_id = NULL WHERE equipe_id = ? AND nivel_acesso = 'Profissional Executante'").bind(eid));
+    if (pr.length) ops.push(db.prepare(`UPDATE usuarios SET equipe_id = ? WHERE nivel_acesso = 'Profissional Executante' AND id IN (${ph(pr)})`).bind(eid, ...pr));
+  }
+  await db.batch(ops);
   return c.json({ sucesso: true });
 }
 async function salvarUsuario(c, id) {
@@ -295,5 +306,21 @@ app.post('/api/admin/equipes', (c) => salvarEquipe(c));
 app.put('/api/admin/equipes/:id', (c) => salvarEquipe(c, c.req.param('id')));
 app.post('/api/admin/usuarios', (c) => salvarUsuario(c));
 app.put('/api/admin/usuarios/:id', (c) => salvarUsuario(c, c.req.param('id')));
+
+app.delete('/api/admin/unidades/:id', async (c) => {
+  const db = c.env.DB_REGULACAO, id = c.req.param('id');
+  if (await db.prepare('SELECT 1 FROM usuarios WHERE unidade_id = ?').bind(id).first())
+    return c.json({ erro: 'Há usuários vinculados a esta unidade. Altere o vínculo deles antes de excluir.' }, 409);
+  await db.prepare('DELETE FROM unidades WHERE id = ?').bind(id).run(); // equipe_unidades cai por CASCADE
+  return c.json({ sucesso: true });
+});
+app.delete('/api/admin/equipes/:id', async (c) => {
+  const db = c.env.DB_REGULACAO, id = c.req.param('id');
+  for (const t of ['usuarios', 'guias', 'grupos'])
+    if (await db.prepare(`SELECT 1 FROM ${t} WHERE equipe_id = ?`).bind(id).first())
+      return c.json({ erro: 'Esta equipe ainda tem profissionais, guias ou grupos vinculados e não pode ser excluída.' }, 409);
+  await db.prepare('DELETE FROM equipes WHERE id = ?').bind(id).run();
+  return c.json({ sucesso: true });
+});
 
 export default app;
