@@ -94,7 +94,7 @@ table.data-table{width:100%;border-collapse:collapse;font-size:14px;min-width:72
 .data-table tr:last-child td{border-bottom:0}
 .data-table tbody tr[data-id]{cursor:pointer}.data-table tbody tr[data-id]:hover{background:var(--surface)}
 .badge,.pri{display:inline-flex;align-items:center;padding:3px 9px;border-radius:999px;font-size:11.5px;font-weight:700}
-.p0{background:#fdece9;color:var(--danger)}.p1{background:#fbf0dd;color:#b7791f}.p2{background:#e7f7f1;color:var(--accent-dark)}.p3{background:#e6ecfa;color:var(--primary)}
+.pri{justify-content:center;min-width:28px;height:28px;padding:0;border-radius:50%;font-size:13px;background:#e6ecfa;color:var(--primary)}.help{position:relative;display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;margin-left:6px;border-radius:50%;background:#e6ecfa;color:var(--primary);font-size:11px;font-weight:800;cursor:help;vertical-align:middle;text-transform:none;letter-spacing:0}.help::after{content:attr(data-tip);position:absolute;left:50%;top:calc(100% + 8px);transform:translateX(-30%);width:220px;padding:8px 10px;border-radius:8px;background:#1b2a5e;color:#fff;font-size:12px;font-weight:500;line-height:1.4;text-align:left;white-space:normal;opacity:0;visibility:hidden;transition:opacity .12s;z-index:50;pointer-events:none}.help:hover::after,.help:focus::after{opacity:1;visibility:visible}
 .badge--user{background:var(--surface);color:var(--muted)}
 /* Janela (modal) */
 dialog{border:0;border-radius:12px;padding:24px;width:min(580px,94vw);max-height:90vh;box-shadow:var(--shadow-lg);color:var(--ink)}
@@ -155,7 +155,7 @@ dialog h2{font-size:16.5px;font-weight:700;color:var(--primary-dark)}
       <button class="primary" id="btnNova">+ Nova guia</button>
     </div>
     <div class="panel table-wrap"><table class="data-table">
-      <thead><tr><th>Paciente</th><th>Prioridade</th><th>Especialidade</th><th>Status</th><th>Equipe</th></tr></thead>
+      <thead><tr><th>Paciente</th><th>Prioridade<span class="help" tabindex="0" role="note" aria-label="Escala de prioridade: de 0 (mais prioritário) a 3 (menos prioritário)." data-tip="Escala de prioridade: de 0 (mais prioritário) a 3 (menos prioritário).">?</span></th><th>Especialidade</th><th>Status</th><th>Equipe</th></tr></thead>
       <tbody id="tbl"></tbody>
     </table></div>
   </main>
@@ -171,8 +171,8 @@ dialog h2{font-size:16.5px;font-weight:700;color:var(--primary-dark)}
     </div>
     <div class="row">
       <div class="field"><label for="gEsp">Especialidade</label><select id="gEsp"></select></div>
-      <div class="field"><label for="gPri">Prioridade</label><select id="gPri">
-        <option value="0">0 – Vermelho (máxima)</option><option value="1">1 – Amarelo</option><option value="2">2 – Verde</option><option value="3" selected>3 – Azul (rotina)</option></select></div>
+      <div class="field"><label for="gPri">Prioridade<span class="help" tabindex="0" role="note" aria-label="Escala de prioridade: de 0 (mais prioritário) a 3 (menos prioritário)." data-tip="Escala de prioridade: de 0 (mais prioritário) a 3 (menos prioritário).">?</span></label><select id="gPri">
+        <option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3" selected>3</option></select></div>
     </div>
     <div class="row">
       <div class="field"><label for="gData">Data de emissão</label><input id="gData" type="date" required></div>
@@ -196,7 +196,7 @@ let token=sessionStorage.getItem('token'), user=JSON.parse(sessionStorage.getIte
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmtCpf=c=>String(c).replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/,'$1.$2.$3-$4');
-const PRI=['Vermelho','Amarelo','Verde','Azul'];
+const PRI=['0','1','2','3'];
 
 async function api(path,opt={}){
   const r=await fetch(path,{...opt,headers:{'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{})}});
@@ -233,7 +233,7 @@ async function carregar(){
     guias=await api('/api/guias');
     $('tbl').innerHTML=guias.map(g=>`<tr data-id="${g.id}" tabindex="0">
       <td><b>${esc(g.nome_paciente)}</b><br><small>${esc(fmtCpf(g.cpf_paciente))}</small></td>
-      <td><span class="pri p${+g.prioridade}">${PRI[g.prioridade]??g.prioridade}</span></td>
+      <td><span class="pri p${+g.prioridade}" title="Prioridade ${+g.prioridade}">${PRI[g.prioridade]??g.prioridade}</span></td>
       <td>${esc(g.especialidade)}</td><td><span class="badge badge--user">${esc(g.status)}</span></td><td>${esc(g.equipe_id)}</td></tr>`).join('')
       ||'<tr><td colspan="5" style="color:var(--muted)">Nenhuma guia ainda. Use “+ Nova guia” para cadastrar a primeira.</td></tr>';
   }catch(e){if(token)alert(e.message);}
