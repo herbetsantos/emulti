@@ -1,16 +1,14 @@
-name = "olhar-emulti"
+# O nome precisa ser igual ao do Worker criado no painel da Cloudflare.
+name = "olharemulti"
 main = "src/index.js"
 compatibility_date = "2025-06-01"
 
-# Frontend estático (pasta public, incluindo assets/imagotipo.png)
 [assets]
 directory = "./public"
 
 [[d1_databases]]
 binding = "DB_REGULACAO"
 database_name = "emulti-db"
-# Rode `npx wrangler d1 create emulti-db` e cole o ID aqui para produção.
-# Em desenvolvimento local (--local) qualquer valor funciona.
-database_id = "COLE_AQUI_O_ID_GERADO_NO_TERMINAL"
+database_id = "9c788fcf-16e5-4f0a-99f9-d7ab1c606420"
 
-# JWT_SECRET: local -> arquivo .dev.vars ; produção -> `npx wrangler secret put JWT_SECRET`
+# JWT_SECRET: local -> .dev.vars ; produção -> painel (Settings > Variables and Secrets) ou `wrangler secret put JWT_SECRET`
