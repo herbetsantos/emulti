@@ -103,6 +103,9 @@ dialog h2{font-size:16.5px;font-weight:700;color:var(--primary-dark)}
 .actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}
 @media(max-width:760px){:root{--side-w:58px}.row{grid-template-columns:1fr}.app-topbar{padding:0 14px}.page{padding:calc(var(--app-topbar-h) + 24px) 16px 60px}.account-button__identity{min-width:0;max-width:130px}.app-brand__text{font-size:15px}.app-brand__text strong{font-size:18px}}
 @media(prefers-reduced-motion:reduce){.side-nav,.side-nav__label{transition:none}}
+.tabs{display:flex;gap:6px;margin:0 0 14px}.tabs button{background:#e6ecfa;color:var(--primary)}.tabs button.on{background:var(--primary);color:#fff}
+.mini{padding:5px 12px;font-size:12.5px;background:#e6ecfa;color:var(--primary)}.chk{display:flex;gap:8px;align-items:center;font-weight:500;margin:4px 0}.chk input{width:auto}
+#dlgA form{min-width:min(460px,86vw)}
 </style>
 </head>
 <body>
@@ -145,11 +148,13 @@ dialog h2{font-size:16.5px;font-weight:700;color:var(--primary-dark)}
       <div class="side-nav__items">
         <button class="side-nav__item is-active" type="button" id="navGuias" title="Guias"><span class="side-nav__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Zm2 4h10M7 12h10M7 16h6"/></svg></span><span class="side-nav__label">Guias</span></button>
         <button class="side-nav__item" type="button" id="navNova" title="Nova guia"><span class="side-nav__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6M12 11v6M9 14h6"/></svg></span><span class="side-nav__label">Nova guia</span></button>
+        <button class="side-nav__item" type="button" id="navAdmin" title="Administração" style="display:none"><span class="side-nav__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><path d="M17 4.5a3.5 3.5 0 0 1 0 7M21.5 20c0-2.7-1.6-4.7-4-5.6"/></svg></span><span class="side-nav__label">Administração</span></button>
       </div>
     </div>
     <div class="side-nav__bottom"><button class="side-nav__item" type="button" data-sair title="Sair"><span class="side-nav__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 17l5-5-5-5M15 12H3M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/></svg></span><span class="side-nav__label">Sair</span></button></div>
   </aside>
   <main class="page">
+    <div id="aviso" class="err" style="display:none">Seu acesso ainda não foi configurado. Peça à gestão para definir sua especialidade e equipe; depois, saia e entre novamente.</div>
     <div class="page__head">
       <div><div class="eyebrow">Olhar eMulti</div><h1 class="page__title">Guias</h1><p class="page__subtitle">Acompanhe os encaminhamentos e priorize os casos mais urgentes.</p></div>
       <button class="primary" id="btnNova">+ Nova guia</button>
@@ -158,8 +163,15 @@ dialog h2{font-size:16.5px;font-weight:700;color:var(--primary-dark)}
       <thead><tr><th>Paciente</th><th>Prioridade<span class="help" tabindex="0" role="note" aria-label="Escala de prioridade: de 0 (mais prioritário) a 3 (menos prioritário)." data-tip="Escala de prioridade: de 0 (mais prioritário) a 3 (menos prioritário).">?</span></th><th>Especialidade</th><th>Status</th><th>Equipe</th></tr></thead>
       <tbody id="tbl"></tbody>
     </table></div>
+    <section id="admin" style="display:none">
+      <div class="page__head"><div><div class="eyebrow">Administração</div><h1 class="page__title">Cadastros</h1><p class="page__subtitle">Gerencie usuários, equipes e unidades do Olhar eMulti.</p></div><button class="primary" id="admNovo"></button></div>
+      <div class="tabs" id="admTabs"><button data-a="usuarios">Usuários</button><button data-a="equipes">Equipes</button><button data-a="unidades">Unidades</button><button data-a="permissoes">Permissões</button></div>
+      <div class="panel table-wrap"><table class="data-table"><thead id="admHead"></thead><tbody id="admBody"></tbody></table></div>
+    </section>
   </main>
 </div>
+
+<dialog id="dlgA"><form id="dlgAF"><h2 id="dlgATit" style="margin-bottom:14px"></h2><div id="dlgAErr" class="err hidden" role="alert"></div><div id="dlgACampos"></div><div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px"><button type="button" id="dlgACan">Cancelar</button><button class="primary" id="dlgASal">Salvar</button></div></form></dialog>
 
 <dialog id="dlg">
   <form id="fGuia">
@@ -207,7 +219,7 @@ async function api(path,opt={}){
 }
 function mostrarApp(){
   $('login').classList.add('hidden');$('app').classList.remove('hidden');
-  $('whoName').textContent=user.nome;$('whoRole').textContent=user.role+(user.esp?' · '+user.esp:'');
+  $('navAdmin').style.display=user.role==='Super Administrador'?'':'none';vista(false);$('whoName').textContent=user.nome;$('whoRole').textContent=user.role+(user.esp?' · '+user.esp:'');
   carregar();
 }
 function sair(){sessionStorage.clear();token=null;user=null;$('app').classList.add('hidden');$('login').classList.remove('hidden');window.iniciarRede&&window.iniciarRede();}
@@ -311,6 +323,60 @@ addEventListener('pageshow',()=>{$('portalBtn').disabled=false;$('portalBtn').qu
   if(t||q.has('erro'))history.replaceState(null,'',location.pathname);
   const e=erros[q.get('erro')];if(e){$('loginErr').textContent=e;$('loginErr').classList.remove('hidden');}
 })();
+
+// ---------- Administração (Super Administrador) ----------
+const NIVEIS=['Super Administrador','Gerenciamento','Gerenciamento Local','Profissional Executante'];
+const pg=document.querySelector('main.page'),vG=[...pg.children].filter(e=>e.id!=='admin'&&e.id!=='aviso');
+let AD=null,aba='usuarios';
+function vista(adm){vG.forEach(e=>e.style.display=adm?'none':'');$('admin').style.display=adm?'':'none';$('aviso').style.display=(!adm&&user&&user.role==='Profissional Executante'&&!user.eq)?'':'none';$('navAdmin').classList.toggle('is-active',adm);$('navGuias').classList.toggle('is-active',!adm);}
+$('navGuias').addEventListener('click',()=>vista(false));$('navNova').addEventListener('click',()=>vista(false));
+$('navAdmin').onclick=()=>{vista(true);carregarAdmin();};
+async function carregarAdmin(){try{AD=await api('/api/admin/dados');renderAdmin();}catch(e){$('admBody').innerHTML='<tr><td>'+esc(e.message)+'</td></tr>';}}
+const nomeDe=(l,id)=>l.find(x=>x.id===id)?.nome||'—';
+const CFG={
+ usuarios:{rot:'usuário',url:'/api/admin/usuarios',
+  cab:['Nome','Login','Nível','Vínculo','Situação',''],
+  lin:u=>[u.nome_completo,u.username,u.nivel_acesso,u.especialidade?u.especialidade+' · '+nomeDe(AD.equipes,u.equipe_id):u.unidade_id?nomeDe(AD.unidades,u.unidade_id):u.nivel_acesso==='Profissional Executante'?'Aguardando configuração':'—',u.ativo?'Ativo':'Inativo'],
+  val:u=>({username:u.username,nome:u.nome_completo,nivel:u.nivel_acesso,especialidade:u.especialidade,equipe_id:u.equipe_id,unidade_id:u.unidade_id,ativo:u.ativo?'1':'0'}),
+  campos:e=>[{k:'nome',l:'Nome completo'},{k:'username',l:'Login (igual ao do Apoio APS)'},{k:'nivel',l:'Nível de acesso',o:NIVEIS.map(x=>[x,x])},
+   {k:'especialidade',l:'Especialidade (Profissional Executante)',o:ESPECIALIDADES.map(x=>[x,x]),v:1},{k:'equipe_id',l:'Equipe (Profissional Executante)',o:AD.equipes.map(x=>[x.id,x.nome]),v:1},
+   {k:'unidade_id',l:'Unidade (Gerenciamento Local)',o:AD.unidades.map(x=>[x.id,x.nome]),v:1},{k:'ativo',l:'Situação',o:[['1','Ativo'],['0','Inativo']]},
+   {k:'senha',l:e?'Nova senha (vazio = manter)':'Senha (vazio = acesso só pelo Apoio APS)',t:'password'}]},
+ equipes:{rot:'equipe',url:'/api/admin/equipes',cab:['Equipe','Unidades atendidas',''],
+  lin:q=>[q.nome,q.unidades.map(i=>nomeDe(AD.unidades,i)).join(', ')||'—'],val:q=>({nome:q.nome,unidades:q.unidades}),
+  campos:()=>[{k:'nome',l:'Nome da equipe'},{k:'unidades',l:'Unidades atendidas',c:AD.unidades.map(x=>[x.id,x.nome])}]},
+ permissoes:{rot:'permissão',url:'/api/admin/permissoes',btn:'Remover',cab:['Especialidade que pode editar','Guias da especialidade','Concedido por',''],
+  lin:r=>[r.especialidade_origem,r.especialidade_destino,r.concedido_por],
+  campos:()=>[{k:'origem',l:'Especialidade que poderá editar',o:ESPECIALIDADES.map(x=>[x,x])},{k:'destino',l:'…guias da especialidade',o:ESPECIALIDADES.map(x=>[x,x])}]},
+ unidades:{rot:'unidade',url:'/api/admin/unidades',cab:['Unidade',''],lin:u=>[u.nome],val:u=>({nome:u.nome}),campos:()=>[{k:'nome',l:'Nome da unidade'}]}
+};
+function renderAdmin(){
+ const c=CFG[aba];document.querySelectorAll('#admTabs button').forEach(b=>b.classList.toggle('on',b.dataset.a===aba));
+ $('admNovo').textContent='+ Novo '+c.rot;$('admHead').innerHTML='<tr>'+c.cab.map(x=>'<th>'+x+'</th>').join('')+'</tr>';
+ const L=AD[aba];$('admBody').innerHTML=L.length?L.map(r=>'<tr>'+c.lin(r).map(x=>'<td>'+esc(x)+'</td>').join('')+'<td><button class="mini" data-e="'+esc(r.id)+'">'+(c.btn||'Editar')+'</button></td></tr>').join(''):'<tr><td colspan="9">Nada cadastrado ainda.</td></tr>';
+}
+document.querySelectorAll('#admTabs button').forEach(b=>b.onclick=()=>{aba=b.dataset.a;renderAdmin();});
+$('admNovo').onclick=()=>formAdm(null);
+$('admBody').onclick=async e=>{const id=e.target.dataset?.e;if(!id)return;
+ if(aba==='permissoes'){const [o,d]=id.split('|');if(!confirm('Remover a permissão de '+o+' editar guias de '+d+'?'))return;
+  try{await api('/api/admin/permissoes?origem='+encodeURIComponent(o)+'&destino='+encodeURIComponent(d),{method:'DELETE'});carregarAdmin();}catch(err){alert(err.message);}return;}
+ formAdm(AD[aba].find(x=>x.id===id));};
+$('dlgACan').onclick=()=>$('dlgA').close();
+function formAdm(item){
+ const c=CFG[aba],v=item?c.val(item):{nivel:'Profissional Executante',ativo:'1',unidades:[]};
+ $('dlgATit').textContent=(item?'Editar ':'Novo ')+c.rot;$('dlgAErr').classList.add('hidden');
+ $('dlgACampos').innerHTML=c.campos(!!item).map(f=>{
+  if(f.c)return '<div class="field"><label>'+f.l+'</label>'+f.c.map(([i,n])=>'<label class="chk"><input type="checkbox" data-g="'+f.k+'" value="'+esc(i)+'"'+((v[f.k]||[]).includes(i)?' checked':'')+'>'+esc(n)+'</label>').join('')+'</div>';
+  if(f.o)return '<div class="field"><label>'+f.l+'</label><select data-k="'+f.k+'">'+(f.v?'<option value="">—</option>':'')+f.o.map(([i,n])=>'<option value="'+esc(i)+'"'+(String(v[f.k]??'')===String(i)?' selected':'')+'>'+esc(n)+'</option>').join('')+'</select></div>';
+  return '<div class="field"><label>'+f.l+'</label><input data-k="'+f.k+'" type="'+(f.t||'text')+'" autocomplete="off" value="'+esc(v[f.k]??'')+'"></div>';}).join('');
+ $('dlgAF').onsubmit=async ev=>{ev.preventDefault();const o={};
+  $('dlgACampos').querySelectorAll('[data-k]').forEach(i=>o[i.dataset.k]=i.value);
+  const gs=[...new Set([...$('dlgACampos').querySelectorAll('[data-g]')].map(i=>i.dataset.g))];gs.forEach(g=>o[g]=[...$('dlgACampos').querySelectorAll('[data-g="'+g+'"]:checked')].map(i=>i.value));
+  if('ativo' in o)o.ativo=o.ativo==='1';
+  try{await api(c.url+(item?'/'+item.id:''),{method:item?'PUT':'POST',body:JSON.stringify(o)});$('dlgA').close();carregarAdmin();}
+  catch(err){$('dlgAErr').textContent=err.message;$('dlgAErr').classList.remove('hidden');}};
+ $('dlgA').showModal();
+}
 if(token&&user)mostrarApp();else window.iniciarRede();
 </script>
 </body>
