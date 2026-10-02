@@ -106,6 +106,23 @@ dialog h2{font-size:16.5px;font-weight:700;color:var(--primary-dark)}
 .tabs{display:flex;gap:6px;margin:0 0 14px}.tabs button{background:#e6ecfa;color:var(--primary)}.tabs button.on{background:var(--primary);color:#fff}
 .mini{padding:5px 12px;font-size:12.5px;background:#e6ecfa;color:var(--primary)}.chk{display:flex;gap:8px;align-items:center;font-weight:500;margin:4px 0}.chk input{width:auto}
 #dlgA form{min-width:min(460px,86vw)}
+.seg{display:flex;gap:8px}.seg button{flex:1;background:#fff;color:var(--primary);border:1.5px solid var(--line)}.seg button:hover{border-color:var(--primary)}.seg button.on{background:var(--primary);color:#fff;border-color:var(--primary)}
+.chips small{display:block;font-weight:700;color:var(--muted);margin:8px 0 4px;font-size:11.5px;text-transform:uppercase;letter-spacing:.04em}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1.5px solid var(--line);border-radius:999px;padding:4px 11px;font-size:13px;font-weight:500;margin:0 6px 6px 0;cursor:pointer}.chip input{width:auto;margin:0}.chip:has(input:checked){background:#e6ecfa;border-color:var(--primary);color:var(--primary)}
+.tag{display:inline-block;background:#e6ecfa;color:var(--primary);border-radius:999px;padding:2px 9px;font-size:12px;font-weight:600;margin:0 4px 4px 0;white-space:nowrap}
+.hrow{display:grid;grid-template-columns:1.5fr 1fr 1fr auto;gap:8px;align-items:center;margin-bottom:8px}
+@media(max-width:560px){.hrow{grid-template-columns:1fr 1fr}}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}.stats .panel{padding:16px 18px}.stats h3{font-size:14px;margin-bottom:8px;color:var(--primary-dark)}.stats table{width:100%;border-collapse:collapse}.stats td{padding:4px 0}.stats td:last-child{text-align:right;font-weight:700}
+.hint{display:block;font-size:12px;color:var(--muted);margin-top:3px}.hint.warn{color:#b45309;font-weight:700}
+#dlg{width:min(780px,94vw)}
+.ac-head{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;margin-bottom:12px}.ac-info{font-size:13.5px}
+.ac-box{border:1.5px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:12px;background:#fafbfe}.ac-box>b{display:block;margin-bottom:8px;color:var(--primary-dark);font-size:14px}
+.ac-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px}.ac-row>*{width:auto;flex:0 1 auto}.ac-row input[type=text]{flex:1 1 180px}
+.ac-prog{font-size:13px;margin-bottom:10px}.ac-ok{color:var(--accent-dark);font-weight:700}.ac-muted{color:var(--muted);font-size:13px;margin:0}
+.tl{list-style:none;margin:0;padding:0;border-left:2px solid var(--line)}.tl li{position:relative;padding:0 0 10px 14px;font-size:13px}.tl li:before{content:"";position:absolute;left:-6px;top:4px;width:10px;height:10px;border-radius:50%;background:var(--primary)}
+.tl time{display:block;font-size:11.5px;color:var(--muted);font-weight:600}.tl small{color:var(--muted)}
+details.ac-hist{margin:4px 0 16px}details.ac-hist summary{cursor:pointer;font-weight:700;color:var(--primary-dark);margin-bottom:10px}
+.dados-tit{font-size:14px;color:var(--primary-dark);margin:6px 0 12px;padding-top:12px;border-top:1.5px solid var(--line)}
 </style>
 </head>
 <body>
@@ -147,7 +164,8 @@ dialog h2{font-size:16.5px;font-weight:700;color:var(--primary-dark)}
       <button class="side-nav__toggle" id="sideNavToggle" type="button" aria-label="Expandir ou recolher menu">☰</button>
       <div class="side-nav__items">
         <button class="side-nav__item is-active" type="button" id="navGuias" title="Guias"><span class="side-nav__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Zm2 4h10M7 12h10M7 16h6"/></svg></span><span class="side-nav__label">Guias</span></button>
-        <button class="side-nav__item" type="button" id="navNova" title="Nova guia"><span class="side-nav__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6M12 11v6M9 14h6"/></svg></span><span class="side-nav__label">Nova guia</span></button>
+        <button class="side-nav__item" type="button" id="navGrupos" title="Grupos"><span class="side-nav__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></span><span class="side-nav__label">Grupos</span></button>
+        <button class="side-nav__item" type="button" id="navRel" title="Relatórios"><span class="side-nav__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h16M7 20v-7M12 20V6M17 20v-10"/></svg></span><span class="side-nav__label">Relatórios</span></button>
         <button class="side-nav__item" type="button" id="navAdmin" title="Administração" style="display:none"><span class="side-nav__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><path d="M17 4.5a3.5 3.5 0 0 1 0 7M21.5 20c0-2.7-1.6-4.7-4-5.6"/></svg></span><span class="side-nav__label">Administração</span></button>
       </div>
     </div>
@@ -155,17 +173,27 @@ dialog h2{font-size:16.5px;font-weight:700;color:var(--primary-dark)}
   </aside>
   <main class="page">
     <div id="aviso" class="err" style="display:none">Seu acesso ainda não foi configurado. Peça à gestão para definir sua especialidade e equipe; depois, saia e entre novamente.</div>
+    <section id="vGuias">
     <div class="page__head">
       <div><div class="eyebrow">Olhar eMulti</div><h1 class="page__title">Guias</h1><p class="page__subtitle">Acompanhe os encaminhamentos e priorize os casos mais urgentes.</p></div>
       <button class="primary" id="btnNova">+ Nova guia</button>
     </div>
     <div class="panel table-wrap"><table class="data-table">
-      <thead><tr><th>Paciente</th><th>Prioridade<span class="help" tabindex="0" role="note" aria-label="Escala de prioridade: de 0 (mais prioritário) a 3 (menos prioritário)." data-tip="Escala de prioridade: de 0 (mais prioritário) a 3 (menos prioritário).">?</span></th><th>Especialidade</th><th>Status</th><th>Equipe</th></tr></thead>
+      <thead><tr><th>Paciente</th><th>Prioridade<span class="help" tabindex="0" role="note" aria-label="Escala de prioridade: de 0 (mais prioritário) a 3 (menos prioritário)." data-tip="Escala de prioridade: de 0 (mais prioritário) a 3 (menos prioritário).">?</span></th><th>Especialidade</th><th>Elegibilidade</th><th>Etiquetas</th><th>Status</th><th>Equipe</th></tr></thead>
       <tbody id="tbl"></tbody>
     </table></div>
+    </section>
+    <section id="vGrupos" style="display:none">
+      <div class="page__head"><div><div class="eyebrow">Olhar eMulti</div><h1 class="page__title">Grupos</h1><p class="page__subtitle">Defina seus grupos, os dias e os horários dos encontros. O mesmo profissional não pode ter grupos com horários conflitantes.</p></div><button class="primary" id="btnNovoGrupo">+ Novo grupo</button></div>
+      <div class="panel table-wrap"><table class="data-table"><thead><tr><th>Grupo</th><th>Especialidade</th><th>Responsável</th><th>Dias e horários</th><th>Guias</th><th>Situação</th><th></th></tr></thead><tbody id="tblG"></tbody></table></div>
+    </section>
+    <section id="vRel" style="display:none">
+      <div class="page__head"><div><div class="eyebrow">Olhar eMulti</div><h1 class="page__title">Relatórios</h1><p class="page__subtitle">Resumo das guias que você pode acessar.</p></div></div>
+      <div class="stats" id="relBody"></div>
+    </section>
     <section id="admin" style="display:none">
       <div class="page__head"><div><div class="eyebrow">Administração</div><h1 class="page__title">Cadastros</h1><p class="page__subtitle">Gerencie usuários, equipes e unidades do Olhar eMulti.</p></div><button class="primary" id="admNovo"></button></div>
-      <div class="tabs" id="admTabs"><button data-a="usuarios">Usuários</button><button data-a="equipes">Equipes</button><button data-a="unidades">Unidades</button><button data-a="permissoes">Permissões</button></div>
+      <div class="tabs" id="admTabs"><button data-a="usuarios">Usuários</button><button data-a="equipes">Equipes</button><button data-a="unidades">Unidades</button><button data-a="etiquetas">Etiquetas</button><button data-a="permissoes">Permissões</button></div>
       <div class="panel table-wrap"><table class="data-table"><thead id="admHead"></thead><tbody id="admBody"></tbody></table></div>
     </section>
   </main>
@@ -173,10 +201,24 @@ dialog h2{font-size:16.5px;font-weight:700;color:var(--primary-dark)}
 
 <dialog id="dlgA"><form id="dlgAF"><h2 id="dlgATit" style="margin-bottom:14px"></h2><div id="dlgAErr" class="err hidden" role="alert"></div><div id="dlgACampos"></div><div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px"><button type="button" id="dlgACan">Cancelar</button><button class="primary" id="dlgASal">Salvar</button></div></form></dialog>
 
+<dialog id="dlgG"><form id="fGrupo">
+  <h2 id="dlgGTit" style="margin-bottom:14px"></h2>
+  <div id="gpErr" class="err hidden" role="alert"></div>
+  <div class="field"><label for="gpNome">Nome do grupo</label><input id="gpNome" required></div>
+  <div class="field hidden" id="fgpProf"><label for="gpProf">Profissional responsável</label><select id="gpProf"></select></div>
+  <div class="field"><label>Dias e horários</label><div id="gpHor"></div><button type="button" class="mini" id="gpAdd">+ Adicionar dia/horário</button></div>
+  <div class="field"><label for="gpStatus">Situação</label><select id="gpStatus"><option>Ativo</option><option>Inativo</option></select></div>
+  <div class="actions"><button type="button" class="ghost" id="gpCan">Cancelar</button><button class="primary">Salvar grupo</button></div>
+</form></dialog>
+
 <dialog id="dlg">
+  <h2 id="dlgTitulo" style="margin-bottom:14px"></h2>
+  <div id="acomp" class="hidden"></div>
   <form id="fGuia">
-    <h2 id="dlgTitulo" style="margin-bottom:14px"></h2>
+    <h3 class="dados-tit hidden" id="gDadosTit">Dados da guia</h3>
     <div id="gErr" class="err hidden" role="alert"></div>
+    <div class="field"><label>Elegibilidade<span class="help" tabindex="0" role="note" aria-label="Defina primeiro se o paciente é elegível a atendimento individual ou a atividade coletiva (grupo). Isso define o fluxo da guia." data-tip="Defina primeiro se o paciente é elegível a atendimento individual ou a atividade coletiva (grupo). Isso define o fluxo da guia.">?</span></label>
+      <div class="seg" id="gModal" role="group" aria-label="Elegibilidade"><button type="button" data-m="Atendimento Individual">Atendimento Individual</button><button type="button" data-m="Atividade Coletiva">Atividade Coletiva</button></div></div>
     <div class="row">
       <div class="field"><label for="gNome">Nome do paciente</label><input id="gNome" required></div>
       <div class="field"><label for="gCpf">CPF</label><input id="gCpf" inputmode="numeric" maxlength="14" required></div>
@@ -191,20 +233,14 @@ dialog h2{font-size:16.5px;font-weight:700;color:var(--primary-dark)}
       <div class="field" id="fEquipe"><label for="gEquipe">Equipe</label><select id="gEquipe"></select></div>
     </div>
     <div class="field"><label for="gMotivo">Motivo do encaminhamento</label><textarea id="gMotivo" rows="2" required></textarea></div>
-    <div class="row">
-      <div class="field"><label for="gStatus">Status</label><select id="gStatus">
-        <option>Aguardando grupo</option><option>Em atendimento</option><option>Pausado</option><option>Encerrado</option></select></div>
-      <div class="field" id="fCom"><label for="gCom">Comunicação com o paciente realizada?</label><select id="gCom"><option value="">—</option><option>Sim</option><option>Não</option></select></div>
-    </div>
-    <div class="field hidden" id="fJust"><label for="gJust">Justificativa da comunicação</label><textarea id="gJust" rows="2"></textarea></div>
-    <div class="field hidden" id="fEnc"><label for="gEnc">Motivo do encerramento</label><textarea id="gEnc" rows="2"></textarea></div>
-    <div class="actions"><button type="button" class="ghost" id="btnCancelar">Cancelar</button><button class="primary">Salvar guia</button></div>
+    <div class="field"><label>Etiquetas</label><div class="chips" id="gEtiq"></div></div>
+    <div class="actions"><button type="button" class="ghost" id="btnCancelar">Fechar</button><button class="primary" id="btnSalvarG">Salvar guia</button></div>
   </form>
 </dialog>
 
 <script>
 const ESPECIALIDADES=['Psicologia','Fisioterapia','Nutrição','Fonoaudiologia','Serviço Social','Educação Física','Terapia Ocupacional'];
-let token=sessionStorage.getItem('token'), user=JSON.parse(sessionStorage.getItem('user')||'null'), guias=[], editId=null;
+let token=sessionStorage.getItem('token'), user=JSON.parse(sessionStorage.getItem('user')||'null'), guias=[], editId=null, ETQ=[], GR=[], modal='';
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmtCpf=c=>String(c).replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/,'$1.$2.$3-$4');
@@ -219,7 +255,7 @@ async function api(path,opt={}){
 }
 function mostrarApp(){
   $('login').classList.add('hidden');$('app').classList.remove('hidden');
-  $('navAdmin').style.display=user.role==='Super Administrador'?'':'none';vista(false);$('whoName').textContent=user.nome;$('whoRole').textContent=user.role+(user.esp?' · '+user.esp:'');
+  $('navAdmin').style.display=user.role==='Super Administrador'?'':'none';vista('guias');$('whoName').textContent=user.nome;$('whoRole').textContent=user.role+(user.esp?' · '+user.esp:'');
   carregar();
 }
 function sair(){sessionStorage.clear();token=null;user=null;$('app').classList.add('hidden');$('login').classList.remove('hidden');window.iniciarRede&&window.iniciarRede();}
@@ -227,7 +263,6 @@ document.querySelectorAll('[data-sair]').forEach(b=>b.onclick=sair);
 $('accountButton').onclick=e=>{e.stopPropagation();const a=$('accountMenu').classList.toggle('hidden');$('accountButton').setAttribute('aria-expanded',String(!a));};
 document.addEventListener('click',()=>{$('accountMenu').classList.add('hidden');$('accountButton').setAttribute('aria-expanded','false');});
 $('sideNavToggle').onclick=()=>$('sideNav').classList.toggle('is-pinned-open');
-$('navGuias').onclick=()=>carregar();
 
 $('verSenha').onclick=()=>{const m=$('ls').type==='password';$('ls').type=m?'text':'password';$('verSenha').textContent=m?'Ocultar':'Mostrar';$('verSenha').setAttribute('aria-label',m?'Ocultar senha':'Mostrar senha');};
 $('fLogin').onsubmit=async e=>{
@@ -240,56 +275,140 @@ $('fLogin').onsubmit=async e=>{
   finally{$('btnEntrar').disabled=false;$('btnEntrar').textContent='Entrar';}
 };
 
+const ELEG={'Atendimento Individual':'Individual','Atividade Coletiva':'Coletiva'};
+const fmtD=s=>s?String(s).split('-').reverse().join('/'):'';
+const fmtDH=iso=>new Date(iso).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',dateStyle:'short',timeStyle:'short'});
+function dicaStatus(g){
+  const w=(t,warn)=>`<span class="hint${warn?' warn':''}">${esc(t)}</span>`;
+  if(g.status==='Aguardando agendamento')return g.modalidade==='Atividade Coletiva'?w('Aguardando alocação em grupo'):w('Registrar agendamento',1);
+  if(g.status==='Agendamento realizado'){
+    const c=w('Consulta '+fmtD(g.data_consulta)+' '+g.hora_consulta);
+    if(g.consulta_passou)return c+w('Registrar comparecimento ou falta',1);
+    return c+(g.comunicacao_realizada==='Sim'?w('Paciente comunicado'):w('Comunicar paciente'+(g.n_contatos?' ('+g.n_contatos+' tentativa'+(g.n_contatos>1?'s':'')+')':''),1));
+  }
+  if(g.status==='Encerrada')return w(g.desfecho||'');
+  return '';
+}
 async function carregar(){
   try{
-    guias=await api('/api/guias');
+    [guias,ETQ]=await Promise.all([api('/api/guias'),api('/api/etiquetas')]);
     $('tbl').innerHTML=guias.map(g=>`<tr data-id="${g.id}" tabindex="0">
       <td><b>${esc(g.nome_paciente)}</b><br><small>${esc(fmtCpf(g.cpf_paciente))}</small></td>
       <td><span class="pri p${+g.prioridade}" title="Prioridade ${+g.prioridade}">${PRI[g.prioridade]??g.prioridade}</span></td>
-      <td>${esc(g.especialidade)}</td><td><span class="badge badge--user">${esc(g.status)}</span></td><td>${esc(g.equipe_id)}</td></tr>`).join('')
-      ||'<tr><td colspan="5" style="color:var(--muted)">Nenhuma guia ainda. Use “+ Nova guia” para cadastrar a primeira.</td></tr>';
+      <td>${esc(g.especialidade)}</td><td title="${esc(g.modalidade||'')}">${esc(ELEG[g.modalidade]||'—')}</td><td>${(g.etiquetas?g.etiquetas.split(','):[]).map(i=>`<span class="tag">${esc(ETQ.find(e=>e.id===i)?.nome||i)}</span>`).join('')||'—'}</td>
+      <td><span class="badge badge--user">${esc(g.status)}</span>${dicaStatus(g)}</td><td>${esc(g.equipe_nome||g.equipe_id)}</td></tr>`).join('')
+      ||'<tr><td colspan="7" style="color:var(--muted)">Nenhuma guia ainda. Use “+ Nova guia” para cadastrar a primeira.</td></tr>';
   }catch(e){if(token)alert(e.message);}
 }
 $('tbl').onclick=e=>{const tr=e.target.closest('tr[data-id]');if(tr)abrir(guias.find(g=>g.id==tr.dataset.id));};
 $('tbl').onkeydown=e=>{if(e.key==='Enter'){const tr=e.target.closest('tr[data-id]');if(tr)abrir(guias.find(g=>g.id==tr.dataset.id));}};
 
-function condicionais(){
-  const s=$('gStatus').value;
-  $('fJust').classList.toggle('hidden',!(s==='Em atendimento'&&$('gCom').value==='Não'));
-  $('fEnc').classList.toggle('hidden',s!=='Encerrado');
+function setModal(m,lock){modal=m||'';document.querySelectorAll('#gModal button').forEach(b=>{b.classList.toggle('on',b.dataset.m===modal);b.disabled=!!lock;});}
+document.querySelectorAll('#gModal button').forEach(b=>b.onclick=()=>setModal(b.dataset.m,false));
+const etqSel=()=>[...$('gEtiq').querySelectorAll('input:checked')].map(i=>i.value);
+function renderEtq(sel,esp){
+  const cats=[...new Set(ETQ.map(e=>e.escopo))].sort((a,b)=>(b===esp)-(a===esp)||a.localeCompare(b));
+  $('gEtiq').innerHTML=ETQ.length?cats.map(c=>`<small>${esc(ESPECIALIDADES.includes(c)?c:'Geral')}</small>`+ETQ.filter(e=>e.escopo===c).map(e=>`<label class="chip"><input type="checkbox" value="${esc(e.id)}"${sel.includes(e.id)?' checked':''}>${esc(e.nome)}</label>`).join('')).join('')
+    :'<span style="color:var(--muted);font-size:13px">Nenhuma etiqueta cadastrada ainda. O Super Administrador cadastra em Administração → Etiquetas.</span>';
 }
-$('gStatus').onchange=$('gCom').onchange=condicionais;
+$('gEsp').onchange=()=>renderEtq(etqSel(),$('gEsp').value);
 $('gCpf').oninput=e=>{e.target.value=e.target.value.replace(/\D/g,'').slice(0,11).replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d{1,2})$/,'$1-$2');};
 
 async function abrir(g){
   editId=g?g.id:null;$('gErr').classList.add('hidden');$('fGuia').reset();
-  $('dlgTitulo').textContent=g?'Editar guia':'Nova guia';
+  $('dlgTitulo').textContent=g?'Guia de '+g.nome_paciente:'Nova guia';
+  $('btnSalvarG').textContent=g?'Salvar dados':'Salvar guia';$('gDadosTit').classList.toggle('hidden',!g);
   const execu=user.role==='Profissional Executante';
   $('gEsp').innerHTML=(execu&&!g?[user.esp]:g?[g.especialidade]:ESPECIALIDADES).map(x=>`<option>${esc(x)}</option>`).join('');
   $('gEsp').disabled=!!g||execu;
+  try{ETQ=await api('/api/etiquetas');}catch{}
   $('fEquipe').classList.toggle('hidden',execu||!!g);
   if(!execu&&!g){const eq=await api('/api/equipes');$('gEquipe').innerHTML=eq.map(x=>`<option value="${esc(x.id)}">${esc(x.nome)}</option>`).join('');}
   if(g){
     $('gNome').value=g.nome_paciente;$('gCpf').value=fmtCpf(g.cpf_paciente);$('gPri').value=g.prioridade;$('gData').value=g.data_emissao;
-    $('gMotivo').value=g.motivo_encaminhamento;$('gStatus').value=g.status;$('gCom').value=g.comunicacao_realizada||'';
-    $('gJust').value=g.justificativa_comunicacao||'';$('gEnc').value=g.motivo_encerramento||'';
+    $('gMotivo').value=g.motivo_encaminhamento;
   }else $('gData').value=new Date().toISOString().slice(0,10);
-  condicionais();$('dlg').showModal();
+  setModal(g?g.modalidade:'',g&&g.status!=='Aguardando agendamento'); // elegibilidade só muda enquanto aguarda agendamento
+  renderEtq(g&&g.etiquetas?g.etiquetas.split(','):[],g?g.especialidade:$('gEsp').value);
+  $('acomp').classList.toggle('hidden',!g);$('acomp').innerHTML='';
+  $('dlg').showModal();
+  if(g)acomp(g.id);
 }
-$('btnNova').onclick=$('navNova').onclick=()=>abrir(null);
+$('btnNova').onclick=()=>abrir(null);
 $('btnCancelar').onclick=()=>$('dlg').close();
-
 $('fGuia').onsubmit=async e=>{
   e.preventDefault();
   const body={nome:$('gNome').value,cpf:$('gCpf').value,especialidade:$('gEsp').value,prioridade:$('gPri').value,data_emissao:$('gData').value,
-    motivo_encaminhamento:$('gMotivo').value,status:$('gStatus').value,comunicacao_realizada:$('gCom').value,
-    justificativa_comunicacao:$('gJust').value,motivo_encerramento:$('gEnc').value,equipe_id:$('gEquipe').value};
+    motivo_encaminhamento:$('gMotivo').value,equipe_id:$('gEquipe').value,modalidade:modal,etiquetas:etqSel()};
+  if(!editId&&!modal){$('gErr').textContent='Defina a elegibilidade: Atendimento Individual ou Atividade Coletiva.';$('gErr').classList.remove('hidden');return;}
   try{
     await api(editId?`/api/guias/${editId}`:'/api/guias',{method:editId?'PUT':'POST',body:JSON.stringify(body)});
     $('dlg').close();carregar();
   }catch(err){$('gErr').textContent=err.message;$('gErr').classList.remove('hidden');}
 };
 
+// ---------- Acompanhamento da guia: agendamento, comunicação, desfecho e histórico ----------
+let AC=null;
+async function acomp(id){
+  try{AC=await api('/api/guias/'+id+'/acompanhamento');renderAcomp();}
+  catch(e){$('acomp').innerHTML=`<div class="err">${esc(e.message)}</div>`;}
+}
+function renderAcomp(){
+  const {guia:g,contatos,historico,regra:r}=AC,st=g.status;
+  const opt=(l,sel)=>l.map(x=>`<option${x===sel?' selected':''}>${esc(x)}</option>`).join('');
+  const formAgenda=(tit,btn,rem)=>`<div class="ac-box"${rem?' id="acRem" style="display:none"':''}><b>${tit}</b><div class="ac-row"><input type="date" id="acData" aria-label="Dia da consulta" value="${esc(g.data_consulta||'')}"><input type="time" id="acHora" aria-label="Horário da consulta" value="${esc(g.hora_consulta||'')}"><button type="button" class="primary" data-act="agendar">${btn}</button></div>${rem?'<p class="ac-muted">Ao remarcar, o paciente precisa ser comunicado novamente da nova data.</p>':''}</div>`;
+  let x=`<div class="ac-head"><span class="badge badge--user">${esc(st)}</span>`;
+  if(g.data_consulta)x+=`<span class="ac-info">Primeira consulta: <b>${fmtD(g.data_consulta)} às ${esc(g.hora_consulta)}</b></span>`;
+  if(g.desfecho)x+=`<span class="ac-info">Desfecho: <b>${esc(g.desfecho)}</b>${g.motivo_falta?' — '+esc(g.motivo_falta)+(g.motivo_falta_obs?' ('+esc(g.motivo_falta_obs)+')':''):''}</span>`;
+  if(g.data_encerramento)x+=`<span class="ac-info">Registrado em ${fmtDH(g.data_encerramento)} por ${esc(g.encerrado_por||'—')}</span>`;
+  x+=`</div><div id="acErr" class="err hidden" role="alert"></div>`;
+  if(st==='Aguardando agendamento'){
+    x+=g.modalidade==='Atendimento Individual'?formAgenda('Registrar o agendamento da primeira consulta','Registrar agendamento',false)
+      :'<div class="ac-box"><b>Atividade coletiva</b><p class="ac-muted">Esta guia aguarda alocação em um grupo.</p></div>';
+  }
+  if(st==='Agendamento realizado'){
+    x+=`<div class="ac-row"><button type="button" class="mini" data-act="remarcar">Remarcar consulta</button></div>`+formAgenda('Remarcar a primeira consulta','Salvar nova data',true);
+    x+=`<div class="ac-box"><b>Comunicação com o paciente</b>`;
+    if(r.comunicado){const c=[...contatos].reverse().find(k=>k.vigente&&k.resultado==='Contato realizado');
+      x+=`<p class="ac-ok">✔ Paciente comunicado${c?' em '+fmtDH(c.data_hora)+' ('+esc(c.meio)+')':''}</p>`;}
+    else{
+      x+=`<div class="ac-prog">Tentativas válidas: <b>${r.tentativas}/${r.min_tentativas}</b> · Dias diferentes: <b>${r.dias}/${r.min_dias}</b></div>
+      <div class="ac-row"><select id="acMeio" aria-label="Meio de contato">${opt(AC.meios)}</select><select id="acRes" aria-label="Resultado do contato"><option value="">Resultado do contato…</option>${opt(AC.resultados)}</select><input type="text" id="acObs" placeholder="Observação (opcional)" maxlength="300"><button type="button" class="primary" data-act="contato">Registrar tentativa</button></div>
+      <p class="ac-muted">Para arquivar por falta de contato: ${r.min_tentativas} tentativas sem sucesso, com no mínimo ${r.intervalo_min} min entre elas, em pelo menos ${r.min_dias} dias diferentes.</p>
+      <div class="ac-row" style="margin-top:8px"><button type="button" class="ghost" data-act="arquivar"${r.ok?'':' disabled'}>Arquivar por falta de contato</button></div>`;
+    }
+    x+=`</div><div class="ac-box"><b>Desfecho da consulta</b>`;
+    if(!g.consulta_passou)x+=`<p class="ac-muted">Poderá ser registrado a partir de ${fmtD(g.data_consulta)} às ${esc(g.hora_consulta)}.</p>`;
+    else x+=`<div class="ac-row"><label class="chk"><input type="radio" name="acDes" value="Compareceu">Compareceu</label><label class="chk"><input type="radio" name="acDes" value="Faltou">Faltou</label></div>
+      <div id="acFalta" class="hidden"><div class="ac-row"><select id="acMot" aria-label="Motivo da falta">${opt(AC.motivos_falta,'Não informado')}</select><input type="text" id="acMotObs" placeholder="Detalhe do motivo (obrigatório se “Outro”)" maxlength="300"></div></div>
+      <button type="button" class="primary" data-act="desfecho">Encerrar guia</button>`;
+    x+=`</div>`;
+  }
+  if(AC.pode_reabrir)x+=`<div class="ac-row"><button type="button" class="ghost" data-act="reabrir">Reabrir guia (correção)</button></div>`;
+  const ev=[...contatos.map(c=>({t:c.data_hora,txt:`Tentativa de contato (${c.meio}): ${c.resultado}`+(c.observacao?' — '+c.observacao:'')+(c.vigente?'':' · agendamento anterior'),u:c.usuario_nome})),
+    ...historico.map(k=>({t:k.data_hora,txt:k.acao+(k.detalhe?' — '+k.detalhe:''),u:k.usuario_nome}))].sort((a,b)=>a.t<b.t?-1:1);
+  x+=`<details class="ac-hist"><summary>Histórico (${ev.length})</summary><ol class="tl">${ev.map(k=>`<li><time>${fmtDH(k.t)}</time>${esc(k.txt)} <small>${k.u?'· '+esc(k.u):''}</small></li>`).join('')}</ol></details>`;
+  $('acomp').innerHTML=x;
+  if(st!=='Aguardando agendamento')setModal(g.modalidade,true);
+}
+$('acomp').addEventListener('change',e=>{if(e.target.name==='acDes')$('acFalta').classList.toggle('hidden',e.target.value!=='Faltou');});
+$('acomp').addEventListener('click',async e=>{
+  const a=e.target.dataset?.act;if(!a)return;const id=AC.guia.id,post=(s,b)=>api(`/api/guias/${id}/${s}`,{method:'POST',body:JSON.stringify(b||{})});
+  const erro=m=>{const z=$('acErr');z.textContent=m;z.classList.remove('hidden');};
+  try{
+    if(a==='remarcar'){const r=$('acRem');r.style.display=r.style.display==='none'?'':'none';return;}
+    if(a==='agendar')await post('agendamento',{data:$('acData').value,hora:$('acHora').value});
+    else if(a==='contato')await post('contatos',{meio:$('acMeio').value,resultado:$('acRes').value,observacao:$('acObs').value});
+    else if(a==='arquivar'){if(!confirm('Arquivar esta guia por falta de contato? O registro fica no histórico.'))return;await post('arquivar');}
+    else if(a==='desfecho'){
+      const r=document.querySelector('input[name=acDes]:checked');if(!r)return erro('Informe se o paciente compareceu ou faltou.');
+      if(!confirm('Registrar “'+r.value+'” e encerrar esta guia?'))return;
+      await post('desfecho',{resultado:r.value,motivo_falta:$('acMot')?.value,motivo_falta_obs:$('acMotObs')?.value});
+    }
+    else if(a==='reabrir'){if(!confirm('Reabrir esta guia? A correção fica registrada no histórico.'))return;await post('reabrir');}
+    await acomp(id);carregar();
+  }catch(ex){erro(ex.message);}
+});
 
 // Fundo de rede interativo (mesmo estilo do portal de Regulação)
 (function(){
@@ -326,15 +445,74 @@ addEventListener('pageshow',()=>{$('portalBtn').disabled=false;$('portalBtn').qu
 
 // ---------- Administração (Super Administrador) ----------
 const NIVEIS=['Super Administrador','Gerenciamento','Gerenciamento Local','Profissional Executante'];
-const pg=document.querySelector('main.page'),vG=[...pg.children].filter(e=>e.id!=='admin'&&e.id!=='aviso');
 let AD=null,aba='usuarios';
-function vista(adm){vG.forEach(e=>e.style.display=adm?'none':'');$('admin').style.display=adm?'':'none';$('aviso').style.display=(!adm&&user&&user.role==='Profissional Executante'&&!user.eq)?'':'none';$('navAdmin').classList.toggle('is-active',adm);$('navGuias').classList.toggle('is-active',!adm);}
-$('navGuias').addEventListener('click',()=>vista(false));$('navNova').addEventListener('click',()=>vista(false));
-$('navAdmin').onclick=()=>{vista(true);carregarAdmin();};
+function vista(v){
+  const ids={guias:'vGuias',grupos:'vGrupos',rel:'vRel',admin:'admin'};
+  for(const k in ids)$(ids[k]).style.display=k===v?'':'none';
+  $('aviso').style.display=(v!=='admin'&&user&&user.role==='Profissional Executante'&&!user.eq)?'':'none';
+  [['guias','navGuias'],['grupos','navGrupos'],['rel','navRel'],['admin','navAdmin']].forEach(([k,n])=>$(n).classList.toggle('is-active',k===v));
+}
+$('navGuias').onclick=()=>{vista('guias');carregar();};
+$('navGrupos').onclick=()=>{vista('grupos');carregarGrupos();};
+$('navRel').onclick=async()=>{vista('rel');await carregar();renderRel();};
+$('navAdmin').onclick=()=>{vista('admin');carregarAdmin();};
+
+// ---------- Relatórios (resumo simples a partir das guias carregadas) ----------
+function renderRel(){
+  const conta=f=>{const m={};guias.forEach(g=>{const k=f(g)||'Não informada';m[k]=(m[k]||0)+1;});return Object.entries(m).sort((a,b)=>b[1]-a[1]);};
+  const bloco=(t,l)=>`<div class="panel"><h3>${t}</h3><table>${l.map(([k,n])=>`<tr><td>${esc(k)}</td><td>${n}</td></tr>`).join('')||'<tr><td>—</td></tr>'}</table></div>`;
+  $('relBody').innerHTML=`<div class="panel"><h3>Total de guias</h3><div style="font-size:34px;font-weight:800;color:var(--primary-dark)">${guias.length}</div></div>`
+    +bloco('Por status',conta(g=>g.status))+bloco('Por elegibilidade',conta(g=>g.modalidade))+bloco('Por desfecho',(()=>{const m={};guias.filter(g=>g.desfecho).forEach(g=>m[g.desfecho]=(m[g.desfecho]||0)+1);return Object.entries(m);})())+bloco('Por especialidade',conta(g=>g.especialidade));
+}
+
+// ---------- Grupos: o profissional define seus grupos, dias e horários ----------
+const DIAS_N=['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'],DIAS_C=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'],ORDEM_DIAS=[1,2,3,4,5,6,0];
+const podeGrupo=()=>!!user&&((user.role==='Profissional Executante'&&!!user.eq)||user.role==='Super Administrador');
+let gpId=null;
+async function carregarGrupos(){
+  $('btnNovoGrupo').style.display=podeGrupo()?'':'none';
+  try{
+    GR=await api('/api/grupos');
+    $('tblG').innerHTML=GR.map(g=>{const meu=user.role==='Super Administrador'||g.profissional_id===user.id;
+      return `<tr><td><b>${esc(g.nome)}</b></td><td>${esc(g.especialidade)}</td><td>${esc(g.profissional_nome||'—')}</td>
+      <td>${g.horarios.map(x=>`<span class="tag">${esc(DIAS_C[x.dia_semana]+' '+x.hora_inicio+'–'+x.hora_fim)}</span>`).join('')||'—'}</td><td>${g.total_guias}</td><td>${esc(g.status)}</td>
+      <td>${meu?`<button class="mini" data-ge="${esc(g.id)}">Editar</button> <button class="mini" data-gd="${esc(g.id)}">Excluir</button>`:''}</td></tr>`;}).join('')
+      ||'<tr><td colspan="7" style="color:var(--muted)">Nenhum grupo cadastrado ainda.</td></tr>';
+  }catch(e){if(token)alert(e.message);}
+}
+function linhaHor(x){
+  const d=document.createElement('div');d.className='hrow';
+  d.innerHTML=`<select data-f="dia">${ORDEM_DIAS.map(i=>`<option value="${i}"${i===x.dia_semana?' selected':''}>${DIAS_N[i]}</option>`).join('')}</select><input type="time" data-f="ini" value="${x.hora_inicio}" required><input type="time" data-f="fim" value="${x.hora_fim}" required><button type="button" class="mini" data-rm aria-label="Remover horário">✕</button>`;
+  $('gpHor').appendChild(d);
+}
+async function abrirGrupo(g){
+  gpId=g?g.id:null;$('gpErr').classList.add('hidden');$('dlgGTit').textContent=g?'Editar grupo':'Novo grupo';
+  $('gpNome').value=g?g.nome:'';$('gpStatus').value=g?g.status:'Ativo';$('gpHor').innerHTML='';
+  (g&&g.horarios.length?g.horarios:[{dia_semana:1,hora_inicio:'08:00',hora_fim:'09:00'}]).forEach(linhaHor);
+  const sa=user.role==='Super Administrador';$('fgpProf').classList.toggle('hidden',!sa);
+  if(sa){
+    try{AD=await api('/api/admin/dados');}catch(e){alert(e.message);return;}
+    $('gpProf').innerHTML=AD.usuarios.filter(u=>u.nivel_acesso==='Profissional Executante'&&u.ativo&&u.equipe_id&&u.especialidade)
+      .map(u=>`<option value="${esc(u.id)}"${g&&g.profissional_id===u.id?' selected':''}>${esc(u.nome_completo+' · '+u.especialidade)}</option>`).join('');
+  }
+  $('dlgG').showModal();
+}
+$('btnNovoGrupo').onclick=()=>abrirGrupo(null);
+$('gpCan').onclick=()=>$('dlgG').close();
+$('gpAdd').onclick=()=>linhaHor({dia_semana:1,hora_inicio:'08:00',hora_fim:'09:00'});
+$('gpHor').onclick=e=>{if(e.target.dataset.rm!==undefined&&$('gpHor').children.length>1)e.target.closest('.hrow').remove();};
+$('tblG').onclick=async e=>{const ed=e.target.dataset?.ge,dl=e.target.dataset?.gd;
+  if(ed)abrirGrupo(GR.find(x=>x.id===ed));
+  if(dl){if(!confirm('Excluir este grupo?'))return;try{await api('/api/grupos/'+dl,{method:'DELETE'});carregarGrupos();}catch(err){alert(err.message);}}};
+$('fGrupo').onsubmit=async e=>{e.preventDefault();
+  const horarios=[...$('gpHor').children].map(r=>({dia_semana:+r.querySelector('[data-f=dia]').value,hora_inicio:r.querySelector('[data-f=ini]').value,hora_fim:r.querySelector('[data-f=fim]').value}));
+  const body={nome:$('gpNome').value,status:$('gpStatus').value,horarios,profissional_id:$('gpProf').value};
+  try{await api(gpId?'/api/grupos/'+gpId:'/api/grupos',{method:gpId?'PUT':'POST',body:JSON.stringify(body)});$('dlgG').close();carregarGrupos();}
+  catch(err){$('gpErr').textContent=err.message;$('gpErr').classList.remove('hidden');}};
 async function carregarAdmin(){try{AD=await api('/api/admin/dados');renderAdmin();}catch(e){$('admBody').innerHTML='<tr><td>'+esc(e.message)+'</td></tr>';}}
 const nomeDe=(l,id)=>l.find(x=>x.id===id)?.nome||'—';
 const CFG={
- usuarios:{rot:'usuário',url:'/api/admin/usuarios',
+ usuarios:{rot:'usuário',url:'/api/admin/usuarios',del:1,
   cab:['Nome','Login','Nível','Vínculo','Situação',''],
   lin:u=>[u.nome_completo,u.username,u.nivel_acesso,u.especialidade?u.especialidade+' · '+nomeDe(AD.equipes,u.equipe_id):u.unidade_id?nomeDe(AD.unidades,u.unidade_id):u.nivel_acesso==='Profissional Executante'?'Aguardando configuração':'—',u.ativo?'Ativo':'Inativo'],
   val:u=>({username:u.username,nome:u.nome_completo,nivel:u.nivel_acesso,especialidade:u.especialidade,equipe_id:u.equipe_id,unidade_id:u.unidade_id,ativo:u.ativo?'1':'0'}),
@@ -342,20 +520,23 @@ const CFG={
    {k:'especialidade',l:'Especialidade (Profissional Executante)',o:ESPECIALIDADES.map(x=>[x,x]),v:1},{k:'equipe_id',l:'Equipe (Profissional Executante)',o:AD.equipes.map(x=>[x.id,x.nome]),v:1},
    {k:'unidade_id',l:'Unidade (Gerenciamento Local)',o:AD.unidades.map(x=>[x.id,x.nome]),v:1},{k:'ativo',l:'Situação',o:[['1','Ativo'],['0','Inativo']]},
    {k:'senha',l:e?'Nova senha (vazio = manter)':'Senha (vazio = acesso só pelo Apoio APS)',t:'password'}]},
- equipes:{rot:'equipe',url:'/api/admin/equipes',cab:['Equipe','Unidades atendidas','Profissionais',''],del:1,
+ equipes:{rot:'equipe',f:1,url:'/api/admin/equipes',cab:['Equipe','Unidades atendidas','Profissionais',''],del:1,
   lin:q=>[q.nome,q.unidades.map(i=>nomeDe(AD.unidades,i)).join(', ')||'—',AD.usuarios.filter(u=>u.equipe_id===q.id).map(u=>u.nome_completo).join(', ')||'—'],
   val:q=>({nome:q.nome,unidades:q.unidades,profissionais:AD.usuarios.filter(u=>u.equipe_id===q.id).map(u=>u.id)}),
   campos:()=>[{k:'nome',l:'Nome da equipe'},{k:'unidades',l:'Unidades atendidas',c:AD.unidades.map(x=>[x.id,x.nome])},
    {k:'profissionais',l:'Profissionais da equipe (marcar move o profissional de outra equipe)',c:AD.usuarios.filter(u=>u.nivel_acesso==='Profissional Executante').map(u=>[u.id,u.nome_completo+(u.especialidade?' · '+u.especialidade:'')])}]},
- permissoes:{rot:'permissão',url:'/api/admin/permissoes',btn:'Remover',cab:['Especialidade que pode editar','Guias da especialidade','Concedido por',''],
+ etiquetas:{rot:'etiqueta',f:1,url:'/api/admin/etiquetas',del:1,cab:['Etiqueta','Categoria profissional',''],
+  lin:e=>[e.nome,e.escopo],val:e=>({nome:e.nome,escopo:e.escopo}),
+  campos:()=>[{k:'nome',l:'Nome da etiqueta'},{k:'escopo',l:'Categoria profissional',o:ESPECIALIDADES.map(x=>[x,x])}]},
+ permissoes:{rot:'permissão',f:1,url:'/api/admin/permissoes',btn:'Remover',cab:['Especialidade que pode editar','Guias da especialidade','Concedido por',''],
   lin:r=>[r.especialidade_origem,r.especialidade_destino,r.concedido_por],
   campos:()=>[{k:'origem',l:'Especialidade que poderá editar',o:ESPECIALIDADES.map(x=>[x,x])},{k:'destino',l:'…guias da especialidade',o:ESPECIALIDADES.map(x=>[x,x])}]},
- unidades:{rot:'unidade',url:'/api/admin/unidades',cab:['Unidade','Equipes que atendem','Gerenciamento local',''],del:1,
+ unidades:{rot:'unidade',f:1,url:'/api/admin/unidades',cab:['Unidade','Equipes que atendem','Gerenciamento local',''],del:1,
   lin:u=>[u.nome,AD.equipes.filter(q=>q.unidades.includes(u.id)).map(q=>q.nome).join(', ')||'—',AD.usuarios.filter(x=>x.unidade_id===u.id).map(x=>x.nome_completo).join(', ')||'—'],val:u=>({nome:u.nome}),campos:()=>[{k:'nome',l:'Nome da unidade'}]}
 };
 function renderAdmin(){
  const c=CFG[aba];document.querySelectorAll('#admTabs button').forEach(b=>b.classList.toggle('on',b.dataset.a===aba));
- $('admNovo').textContent='+ Novo '+c.rot;$('admHead').innerHTML='<tr>'+c.cab.map(x=>'<th>'+x+'</th>').join('')+'</tr>';
+ $('admNovo').textContent='+ '+(c.f?'Nova ':'Novo ')+c.rot;$('admHead').innerHTML='<tr>'+c.cab.map(x=>'<th>'+x+'</th>').join('')+'</tr>';
  const L=AD[aba];$('admBody').innerHTML=L.length?L.map(r=>'<tr>'+c.lin(r).map(x=>'<td>'+esc(x)+'</td>').join('')+'<td><button class="mini" data-e="'+esc(r.id)+'">'+(c.btn||'Editar')+'</button>'+(c.del?' <button class="mini" data-d="'+esc(r.id)+'">Excluir</button>':'')+'</td></tr>').join(''):'<tr><td colspan="9">Nada cadastrado ainda.</td></tr>';
 }
 document.querySelectorAll('#admTabs button').forEach(b=>b.onclick=()=>{aba=b.dataset.a;renderAdmin();});
@@ -370,7 +551,7 @@ $('admBody').onclick=async e=>{const del=e.target.dataset?.d;
 $('dlgACan').onclick=()=>$('dlgA').close();
 function formAdm(item){
  const c=CFG[aba],v=item?c.val(item):{nivel:'Profissional Executante',ativo:'1',unidades:[]};
- $('dlgATit').textContent=(item?'Editar ':'Novo ')+c.rot;$('dlgAErr').classList.add('hidden');
+ $('dlgATit').textContent=(item?'Editar ':(c.f?'Nova ':'Novo '))+c.rot;$('dlgAErr').classList.add('hidden');
  $('dlgACampos').innerHTML=c.campos(!!item).map(f=>{
   if(f.c)return '<div class="field"><label>'+f.l+'</label>'+f.c.map(([i,n])=>'<label class="chk"><input type="checkbox" data-g="'+f.k+'" value="'+esc(i)+'"'+((v[f.k]||[]).includes(i)?' checked':'')+'>'+esc(n)+'</label>').join('')+'</div>';
   if(f.o)return '<div class="field"><label>'+f.l+'</label><select data-k="'+f.k+'">'+(f.v?'<option value="">—</option>':'')+f.o.map(([i,n])=>'<option value="'+esc(i)+'"'+(String(v[f.k]??'')===String(i)?' selected':'')+'>'+esc(n)+'</option>').join('')+'</select></div>';
