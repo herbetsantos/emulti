@@ -48,12 +48,46 @@ CREATE TABLE guias (
     data_emissao DATE NOT NULL,
     data_cadastro DATETIME DEFAULT CURRENT_TIMESTAMP,
     motivo_encaminhamento TEXT NOT NULL,
-    status TEXT DEFAULT 'Aguardando grupo', 
+    status TEXT DEFAULT 'Aguardando agendamento', 
+    modalidade TEXT, 
     comunicacao_realizada TEXT, 
     justificativa_comunicacao TEXT, 
     motivo_encerramento TEXT, 
     equipe_id TEXT NOT NULL, 
+    data_consulta DATE,
+    hora_consulta TEXT,
+    agendamento_registrado_em TEXT,
+    desfecho TEXT,
+    motivo_falta TEXT,
+    motivo_falta_obs TEXT,
+    data_encerramento DATETIME,
+    encerrado_por TEXT,
     FOREIGN KEY (equipe_id) REFERENCES equipes(id)
+);
+
+CREATE TABLE guia_contatos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    guia_id INTEGER NOT NULL,
+    data_hora TEXT NOT NULL,
+    meio TEXT NOT NULL,
+    resultado TEXT NOT NULL,
+    observacao TEXT,
+    usuario_id TEXT,
+    usuario_nome TEXT,
+    FOREIGN KEY (guia_id) REFERENCES guias(id) ON DELETE CASCADE
+);
+
+CREATE TABLE guia_historico (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    guia_id INTEGER NOT NULL,
+    data_hora TEXT NOT NULL,
+    usuario_id TEXT,
+    usuario_nome TEXT,
+    status_anterior TEXT,
+    status_novo TEXT,
+    acao TEXT NOT NULL,
+    detalhe TEXT,
+    FOREIGN KEY (guia_id) REFERENCES guias(id) ON DELETE CASCADE
 );
 
 CREATE TABLE etiquetas (
@@ -77,7 +111,17 @@ CREATE TABLE grupos (
     equipe_id TEXT NOT NULL,
     data_criacao DATETIME DEFAULT CURRENT_TIMESTAMP,
     status TEXT DEFAULT 'Ativo',
+    profissional_id TEXT,
     FOREIGN KEY (equipe_id) REFERENCES equipes(id)
+);
+
+CREATE TABLE grupo_horarios (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    grupo_id TEXT NOT NULL,
+    dia_semana INTEGER NOT NULL,
+    hora_inicio TEXT NOT NULL,
+    hora_fim TEXT NOT NULL,
+    FOREIGN KEY (grupo_id) REFERENCES grupos(id) ON DELETE CASCADE
 );
 
 CREATE TABLE grupo_guias (
