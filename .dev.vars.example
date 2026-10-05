@@ -1,0 +1,2 @@
+# Copie para .dev.vars e troque. Precisa ter 32+ caracteres; o Worker recusa o valor de exemplo.
+JWT_SECRET="troque-por-uma-frase-longa-e-aleatoria-com-32+-caracteres"

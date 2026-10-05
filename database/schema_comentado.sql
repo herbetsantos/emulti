@@ -1,3 +1,4 @@
+-- DESATUALIZADO: serve só como material de leitura. A fonte de verdade é database/schema.sql.
 -- ========================================================
 -- 1. ESTRUTURA ORGANIZACIONAL (UNIDADES E EQUIPES)
 -- ========================================================

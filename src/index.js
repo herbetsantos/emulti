@@ -15,8 +15,37 @@ const MOTIVOS_FALTA = ['Problema de saúde', 'Sem transporte ou dificuldade de d
 // Regra de arquivamento por falta de contato
 const MIN_TENTATIVAS = 3, MIN_DIAS = 2, INTERVALO_MIN = 60; // INTERVALO_MIN: minutos mínimos entre tentativas para contarem como "momentos diferentes"
 const MODALIDADES = ['Atendimento Individual', 'Atividade Coletiva'];
+const MOTIVOS_GRUPO = ['Concluiu o ciclo de atividades', 'Desistiu', 'Faltas excessivas', 'Outro']; // encerramento da participação em grupo
 const DIAS = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
 const app = new Hono();
+
+// ---------- Cabeçalhos de segurança (valem para a API e para a página servida pelos assets) ----------
+// 'unsafe-inline' é necessário porque a página tem <script> e <style> embutidos; o ideal é movê-los para arquivos e remover isso.
+const CSP = ["default-src 'self'", "script-src 'self' 'unsafe-inline'", "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  "font-src https://fonts.gstatic.com", "img-src 'self' data:", "connect-src 'self'", "object-src 'none'", "base-uri 'self'",
+  "form-action 'self'", "frame-ancestors 'none'"].join('; ');
+app.use('*', async (c, next) => {
+  await next();
+  const r = new Response(c.res.body, c.res); // resposta de ASSETS.fetch tem cabeçalhos imutáveis; a cópia permite alterá-los
+  r.headers.set('Content-Security-Policy', CSP);
+  r.headers.set('X-Frame-Options', 'DENY');
+  r.headers.set('X-Content-Type-Options', 'nosniff');
+  r.headers.set('Referrer-Policy', 'no-referrer');
+  r.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  r.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  if (c.req.path.startsWith('/api/')) r.headers.set('Cache-Control', 'no-store');
+  c.res = r;
+});
+
+// Recusa operar com segredo ausente, curto ou igual ao do exemplo (qualquer um forjaria tokens de administrador).
+const segredoFraco = (s) => typeof s !== 'string' || s.length < 32 || /troque-por/i.test(s);
+app.use('/api/*', async (c, next) => {
+  if (segredoFraco(c.env.JWT_SECRET)) {
+    console.error('JWT_SECRET ausente, com menos de 32 caracteres ou igual ao do exemplo. Defina com: npx wrangler secret put JWT_SECRET');
+    return c.json({ erro: 'Servidor mal configurado. Avise o administrador.' }, 500);
+  }
+  await next();
+});
 const novoId = (p) => p + crypto.randomUUID().slice(0, 8);
 
 // ---------- Senhas (PBKDF2-SHA256, formato "saltHex:hashHex") ----------
@@ -122,6 +151,25 @@ const gravarEtiquetas = (db, guiaId, ids) => db.batch([
   ...ids.map((e) => db.prepare('INSERT INTO guias_etiquetas (guia_id, etiqueta_id) VALUES (?, ?)').bind(guiaId, e)),
 ]);
 
+// ---------- Limite de tentativas de login: 5 falhas seguidas bloqueiam usuário+IP por 15 min ----------
+// Se a tabela login_falhas não existir (migração 004 não aplicada), o login continua funcionando e o erro vai para o log.
+const LOGIN_MAX = 5, LOGIN_BLOQUEIO_MIN = 15;
+const chaveLogin = (c, login) => `${login.slice(0, 64)}|${c.req.header('CF-Connecting-IP') ?? 'local'}`;
+async function loginBloqueado(db, chave) {
+  try {
+    const r = await db.prepare('SELECT n, ate FROM login_falhas WHERE chave = ?').bind(chave).first();
+    return !!r && r.n >= LOGIN_MAX && r.ate > new Date().toISOString();
+  } catch (e) { console.error('login_falhas indisponível (aplique database/Migracao 004):', e.message); return false; }
+}
+async function loginFalhou(db, chave) {
+  const agora = new Date(), ate = new Date(agora.getTime() + LOGIN_BLOQUEIO_MIN * 60000).toISOString();
+  try {
+    await db.prepare(`INSERT INTO login_falhas (chave, n, ate) VALUES (?, 1, ?)
+      ON CONFLICT(chave) DO UPDATE SET n = CASE WHEN ate < ? THEN 1 ELSE n + 1 END, ate = ?`).bind(chave, ate, agora.toISOString(), ate).run();
+  } catch (e) { console.error(e.message); }
+}
+const loginOk = (db, chave) => db.prepare('DELETE FROM login_falhas WHERE chave = ?').bind(chave).run().catch(() => {});
+
 async function emitirToken(c, u) {
   const user = { id: u.id, nome: u.nome_completo, role: u.nivel_acesso, esp: u.especialidade ?? null, eq: u.equipe_id ?? null, uni: u.unidade_id ?? null };
   const token = await sign({ ...user, exp: Math.floor(Date.now() / 1000) + 8 * 3600 }, c.env.JWT_SECRET, 'HS256');
@@ -134,6 +182,7 @@ async function emitirToken(c, u) {
 app.get('/', async (c) => {
   const handoff = c.req.query('handoff');
   if (!handoff) return c.env.ASSETS.fetch(c.req.raw);
+  if (segredoFraco(c.env.JWT_SECRET)) { console.error('JWT_SECRET inválido'); return c.redirect('/?erro=handoff', 302); }
   c.header('Cache-Control', 'no-store');
   try {
     const h = await c.env.DB.prepare(`SELECT h.expires_at, h.used, u.username, u.name, u.active
@@ -141,17 +190,13 @@ app.get('/', async (c) => {
     if (!h || h.used || !h.active || new Date(h.expires_at).getTime() < Date.now()) return c.redirect('/?erro=handoff', 302);
     const upd = await c.env.DB.prepare('UPDATE handoff_tokens SET used = 1 WHERE token = ? AND used = 0').bind(handoff).run();
     if (!upd.meta?.changes) return c.redirect('/?erro=handoff', 302);
-    let u = await c.env.DB_REGULACAO.prepare('SELECT * FROM usuarios WHERE lower(username) = ? AND ativo = 1')
+    // Só entra quem já foi cadastrado no Olhar por um Super Administrador (nada de cadastro automático no primeiro acesso).
+    const u = await c.env.DB_REGULACAO.prepare('SELECT * FROM usuarios WHERE lower(username) = ? AND ativo = 1')
       .bind(String(h.username).trim().toLowerCase()).first();
-    if (!u) {
-      // Primeiro acesso: cria o cadastro SEM nenhuma permissão (Profissional Executante sem equipe não enxerga guia alguma).
-      // O Super Administrador define nível, especialidade, equipe e unidade depois. Nunca se herda cargo do Apoio APS.
-      const login = String(h.username).trim().toLowerCase();
-      await c.env.DB_REGULACAO.prepare(`INSERT OR IGNORE INTO usuarios (id, username, senha_hash, nome_completo, nivel_acesso, ativo)
-        VALUES (?, ?, '00:00', ?, 'Profissional Executante', 1)`).bind(novoId('u'), login, String(h.name || login).trim()).run();
-      u = await c.env.DB_REGULACAO.prepare('SELECT * FROM usuarios WHERE lower(username) = ? AND ativo = 1').bind(login).first();
-      if (!u) return c.redirect('/?erro=sem-acesso', 302);
-    }
+    if (!u) return c.redirect('/?erro=sem-acesso', 302);
+    // O vínculo com o Apoio APS é só pelo username. Para não permitir que um login homônimo lá vire administrador aqui,
+    // o Super Administrador entra apenas com usuário e senha do Olhar.
+    if (u.nivel_acesso === 'Super Administrador') return c.redirect('/?erro=admin-sso', 302);
     const { token } = await emitirToken(c, u);
     return c.redirect(`/#sso=${token}`, 302); // fragmento não é enviado a servidores nem registrado em logs
   } catch (e) {
@@ -163,11 +208,16 @@ app.get('/', async (c) => {
 // ---------- Login (público) ----------
 app.post('/api/login', async (c) => {
   const b = await c.req.json().catch(() => ({}));
-  const u = await c.env.DB_REGULACAO.prepare('SELECT * FROM usuarios WHERE username = ? AND ativo = 1')
-    .bind(String(b.username ?? '').trim().toLowerCase()).first();
+  const login = String(b.username ?? '').trim().toLowerCase(), db = c.env.DB_REGULACAO, chave = chaveLogin(c, login);
+  if (await loginBloqueado(db, chave)) {
+    c.header('Retry-After', String(LOGIN_BLOQUEIO_MIN * 60));
+    return c.json({ erro: `Muitas tentativas. Aguarde ${LOGIN_BLOQUEIO_MIN} minutos e tente novamente.` }, 429);
+  }
+  const u = await db.prepare('SELECT * FROM usuarios WHERE username = ? AND ativo = 1').bind(login).first();
   // Mesmo custo de cálculo quando o usuário não existe (evita revelar contas)
   const ok = await senhaConfere(String(b.senha ?? ''), u?.senha_hash ?? '00:00');
-  if (!u || !ok) return c.json({ erro: 'Usuário ou senha incorretos.' }, 401);
+  if (!u || !ok) { await loginFalhou(db, chave); return c.json({ erro: 'Usuário ou senha incorretos.' }, 401); }
+  await loginOk(db, chave);
   return c.json(await emitirToken(c, u));
 });
 
@@ -175,11 +225,15 @@ app.post('/api/login', async (c) => {
 app.use('/api/*', async (c, next) => {
   if (c.req.path === '/api/login') return next();
   const t = (c.req.header('Authorization') || '').replace(/^Bearer /, '');
-  try {
-    c.set('user', await verify(t, c.env.JWT_SECRET, 'HS256'));
-  } catch {
-    return c.json({ erro: 'Sessão inválida ou expirada. Entre novamente.' }, 401);
-  }
+  let p;
+  try { p = await verify(t, c.env.JWT_SECRET, 'HS256'); }
+  catch { return c.json({ erro: 'Sessão inválida ou expirada. Entre novamente.' }, 401); }
+  // A assinatura prova quem é a pessoa; perfil, equipe e situação vêm do banco. Assim, inativar um usuário ou
+  // mudar o perfil dele vale na hora, e não só quando o token expira.
+  const u = await c.env.DB_REGULACAO.prepare('SELECT id, nome_completo, nivel_acesso, especialidade, equipe_id, unidade_id FROM usuarios WHERE id = ? AND ativo = 1')
+    .bind(String(p.id ?? '')).first();
+  if (!u) return c.json({ erro: 'Sessão inválida ou expirada. Entre novamente.' }, 401);
+  c.set('user', { id: u.id, nome: u.nome_completo, role: u.nivel_acesso, esp: u.especialidade ?? null, eq: u.equipe_id ?? null, uni: u.unidade_id ?? null });
   await next();
 });
 
@@ -202,7 +256,9 @@ app.get('/api/guias', async (c) => {
   const { results } = await c.env.DB_REGULACAO
     .prepare(`SELECT guias.*, (SELECT group_concat(etiqueta_id) FROM guias_etiquetas WHERE guia_id = guias.id) AS etiquetas,
       (SELECT nome FROM equipes WHERE id = guias.equipe_id) AS equipe_nome,
-      (SELECT COUNT(*) FROM guia_contatos WHERE guia_id = guias.id) AS n_contatos
+      (SELECT COUNT(*) FROM guia_contatos WHERE guia_id = guias.id) AS n_contatos,
+      (SELECT gr.id FROM grupo_guias gg JOIN grupos gr ON gr.id = gg.grupo_id WHERE gg.guia_id = guias.id LIMIT 1) AS grupo_id,
+      (SELECT gr.nome FROM grupo_guias gg JOIN grupos gr ON gr.id = gg.grupo_id WHERE gg.guia_id = guias.id LIMIT 1) AS grupo_nome
       FROM guias WHERE ${s.sql} ORDER BY prioridade ASC, data_cadastro ASC`).bind(...s.p).all();
   return c.json(results.map((g) => ({ ...g, consulta_passou: g.status === ST.AGENDADO && consultaPassou(g) })));
 });
@@ -289,6 +345,9 @@ app.get('/api/guias/:id/acompanhamento', async (c) => {
   const u = c.get('user'), db = c.env.DB_REGULACAO, id = Number(c.req.param('id')), s = escopo(u);
   const guia = Number.isInteger(id) ? await db.prepare(`SELECT * FROM guias WHERE id = ? AND ${s.sql}`).bind(id, ...s.p).first() : null;
   if (!guia) return c.json({ erro: 'Guia não encontrada.' }, 404);
+  const gp = guia.status === ST.GRUPO ? await db.prepare(`SELECT gr.id, gr.nome, gr.profissional_id, (SELECT nome_completo FROM usuarios WHERE id = gr.profissional_id) AS profissional_nome
+      FROM grupo_guias gg JOIN grupos gr ON gr.id = gg.grupo_id WHERE gg.guia_id = ?`).bind(id).first() : null;
+  const hg = gp ? (await db.prepare('SELECT dia_semana, hora_inicio, hora_fim FROM grupo_horarios WHERE grupo_id = ? ORDER BY ((dia_semana + 6) % 7), hora_inicio').bind(gp.id).all()).results : [];
   const [ct, hs] = await Promise.all([
     db.prepare('SELECT id, data_hora, meio, resultado, observacao, usuario_nome FROM guia_contatos WHERE guia_id = ? ORDER BY data_hora, id').bind(id).all(),
     db.prepare('SELECT id, data_hora, usuario_nome, status_anterior, status_novo, acao, detalhe FROM guia_historico WHERE guia_id = ? ORDER BY data_hora, id').bind(id).all(),
@@ -298,7 +357,9 @@ app.get('/api/guias/:id/acompanhamento', async (c) => {
     contatos: ct.results.map((x) => ({ ...x, vigente: !guia.agendamento_registrado_em || x.data_hora >= guia.agendamento_registrado_em })),
     historico: hs.results,
     regra: regraContato(contatosVigentes(guia, ct.results)),
-    meios: MEIOS, resultados: RESULTADOS, motivos_falta: MOTIVOS_FALTA,
+    meios: MEIOS, resultados: RESULTADOS, motivos_falta: MOTIVOS_FALTA, motivos_grupo: MOTIVOS_GRUPO,
+    grupo: gp ? { id: gp.id, nome: gp.nome, profissional_nome: gp.profissional_nome, horarios: hg } : null,
+    pode_gerir_grupo: !!gp && podeGerirGrupo(u, gp),
     pode_reabrir: u.role === 'Super Administrador' && [ST.ENCERRADA, ST.ARQUIVADA].includes(guia.status),
   });
 });
@@ -390,6 +451,7 @@ app.post('/api/guias/:id/reabrir', async (c) => {
   const novo = guia.data_consulta ? ST.AGENDADO : ST.AGUARDANDO;
   await db.batch([
     db.prepare('UPDATE guias SET status = ?, desfecho = NULL, motivo_falta = NULL, motivo_falta_obs = NULL, data_encerramento = NULL, encerrado_por = NULL WHERE id = ?').bind(novo, id),
+    db.prepare('DELETE FROM grupo_guias WHERE guia_id = ?').bind(id), // guia coletiva reaberta volta a aguardar alocação
     hist(db, id, u, guia.status, novo, 'Guia reaberta', `Desfecho anterior: ${guia.desfecho ?? '—'}${guia.motivo_falta ? ' (' + guia.motivo_falta + ')' : ''}`),
   ]);
   return c.json({ sucesso: true });
@@ -433,7 +495,7 @@ app.get('/api/grupos', async (c) => {
   const [g, h, n, us] = await Promise.all([
     db.prepare(`SELECT * FROM grupos WHERE ${s.sql} ORDER BY nome`).bind(...s.p).all(),
     db.prepare(`SELECT grupo_id, dia_semana, hora_inicio, hora_fim FROM grupo_horarios WHERE grupo_id IN (${sub}) ORDER BY ((dia_semana + 6) % 7), hora_inicio`).bind(...s.p).all(),
-    db.prepare(`SELECT grupo_id, COUNT(*) AS n FROM grupo_guias WHERE grupo_id IN (${sub}) GROUP BY grupo_id`).bind(...s.p).all(),
+    db.prepare(`SELECT gg.grupo_id, COUNT(*) AS n FROM grupo_guias gg JOIN guias g ON g.id = gg.guia_id WHERE g.status = ? AND gg.grupo_id IN (${sub}) GROUP BY gg.grupo_id`).bind(ST.GRUPO, ...s.p).all(),
     db.prepare(`SELECT id, nome_completo FROM usuarios WHERE id IN (SELECT profissional_id FROM grupos WHERE ${s.sql})`).bind(...s.p).all(),
   ]);
   return c.json(g.results.map((x) => ({
@@ -469,6 +531,12 @@ async function salvarGrupo(c, id) {
     prof = r;
   } else return c.json({ erro: 'Você não tem permissão para alterar grupos.' }, 403);
 
+  if (atual) {
+    const n = await membrosAtivos(db, atual.id);
+    if (n > 0 && status === 'Inativo') return c.json({ erro: `Este grupo tem ${n} participante(s). Remova-os ou encerre a participação antes de inativá-lo.` }, 409);
+    if (n > 0 && (prof.equipe_id !== atual.equipe_id || prof.especialidade !== atual.especialidade))
+      return c.json({ erro: 'Este grupo tem participantes; não é possível trocar o responsável por alguém de outra equipe ou especialidade.' }, 409);
+  }
   if (status === 'Ativo') {
     const conf = await conflitoProfissional(db, prof.id, v.hs, id);
     if (conf) return c.json({ erro: conf }, 409);
@@ -493,6 +561,74 @@ app.delete('/api/grupos/:id', async (c) => {
   if (await db.prepare('SELECT 1 FROM grupo_guias WHERE grupo_id = ?').bind(id).first())
     return c.json({ erro: 'Este grupo tem guias alocadas. Marque-o como Inativo em vez de excluir.' }, 409);
   await db.prepare('DELETE FROM grupos WHERE id = ?').bind(id).run();
+  return c.json({ sucesso: true });
+});
+
+// ---------- Atividade coletiva: alocação de guias em grupos ----------
+// Fluxo: guia coletiva 'Aguardando agendamento' → alocada ('Grupo agendado') → participação encerrada ('Encerrada').
+// Só o Super Administrador e o profissional responsável pelo grupo gerenciam participantes.
+const podeGerirGrupo = (u, g) => u.role === 'Super Administrador' || (u.role === 'Profissional Executante' && g.profissional_id === u.id);
+const membrosAtivos = async (db, gid) =>
+  (await db.prepare('SELECT COUNT(*) AS n FROM grupo_guias gg JOIN guias g ON g.id = gg.guia_id WHERE gg.grupo_id = ? AND g.status = ?').bind(gid, ST.GRUPO).first()).n;
+async function grupoVisivel(c) {
+  const u = c.get('user'), s = escopo(u);
+  return c.env.DB_REGULACAO.prepare(`SELECT * FROM grupos WHERE id = ? AND ${s.sql}`).bind(c.req.param('id'), ...s.p).first();
+}
+
+app.get('/api/grupos/:id/guias', async (c) => {
+  const u = c.get('user'), db = c.env.DB_REGULACAO, g = await grupoVisivel(c);
+  if (!g) return c.json({ erro: 'Grupo não encontrado.' }, 404);
+  const { results } = await db.prepare(`SELECT g.id, g.nome_paciente, g.cpf_paciente, g.prioridade, gg.data_inclusao
+    FROM grupo_guias gg JOIN guias g ON g.id = gg.guia_id WHERE gg.grupo_id = ? AND g.status = ? ORDER BY g.prioridade, gg.data_inclusao`).bind(g.id, ST.GRUPO).all();
+  return c.json({ grupo: { id: g.id, nome: g.nome, status: g.status }, guias: results, pode_gerir: podeGerirGrupo(u, g) });
+});
+
+app.post('/api/grupos/:id/guias', async (c) => {
+  const u = c.get('user'), db = c.env.DB_REGULACAO, b = await corpo(c), g = await grupoVisivel(c);
+  if (!g) return c.json({ erro: 'Grupo não encontrado.' }, 404);
+  if (!podeGerirGrupo(u, g)) return c.json({ erro: 'Somente o profissional responsável pelo grupo pode alocar guias.' }, 403);
+  if (g.status !== 'Ativo') return c.json({ erro: 'Este grupo está inativo.' }, 409);
+  const gid = Number(b.guia_id);
+  const guia = Number.isInteger(gid) ? await db.prepare('SELECT * FROM guias WHERE id = ? AND equipe_id = ?').bind(gid, g.equipe_id).first() : null;
+  if (!guia) return c.json({ erro: 'Guia não encontrada nesta equipe.' }, 404);
+  if (guia.modalidade !== 'Atividade Coletiva') return c.json({ erro: 'Somente guias elegíveis a atividade coletiva podem ser alocadas em grupo.' }, 409);
+  if (guia.especialidade !== g.especialidade) return c.json({ erro: `A guia é de ${guia.especialidade}; este grupo é de ${g.especialidade}.` }, 409);
+  if (guia.status !== ST.AGUARDANDO) return c.json({ erro: 'Esta guia não está aguardando alocação.' }, 409);
+  await db.batch([
+    db.prepare('DELETE FROM grupo_guias WHERE guia_id = ?').bind(gid),
+    db.prepare('INSERT INTO grupo_guias (grupo_id, guia_id) VALUES (?,?)').bind(g.id, gid),
+    db.prepare('UPDATE guias SET status = ? WHERE id = ?').bind(ST.GRUPO, gid),
+    hist(db, gid, u, guia.status, ST.GRUPO, 'Alocada em grupo', g.nome),
+  ]);
+  return c.json({ sucesso: true });
+});
+
+app.delete('/api/grupos/:id/guias/:guiaId', async (c) => {
+  const u = c.get('user'), db = c.env.DB_REGULACAO, g = await grupoVisivel(c), gid = Number(c.req.param('guiaId'));
+  if (!g) return c.json({ erro: 'Grupo não encontrado.' }, 404);
+  if (!podeGerirGrupo(u, g)) return c.json({ erro: 'Somente o profissional responsável pelo grupo pode remover participantes.' }, 403);
+  const guia = Number.isInteger(gid) ? await db.prepare('SELECT g.* FROM guias g JOIN grupo_guias gg ON gg.guia_id = g.id WHERE gg.grupo_id = ? AND g.id = ?').bind(g.id, gid).first() : null;
+  if (!guia || guia.status !== ST.GRUPO) return c.json({ erro: 'Esta guia não é participante ativa deste grupo.' }, 404);
+  await db.batch([
+    db.prepare('DELETE FROM grupo_guias WHERE grupo_id = ? AND guia_id = ?').bind(g.id, gid),
+    db.prepare('UPDATE guias SET status = ? WHERE id = ?').bind(ST.AGUARDANDO, gid),
+    hist(db, gid, u, ST.GRUPO, ST.AGUARDANDO, 'Removida do grupo', g.nome),
+  ]);
+  return c.json({ sucesso: true });
+});
+
+app.post('/api/guias/:id/encerrar-grupo', async (c) => {
+  const r = await guiaEditavel(c); if (r.resp) return r.resp;
+  const { u, db, id, guia } = r, b = await corpo(c);
+  if (guia.status !== ST.GRUPO) return c.json({ erro: 'Esta guia não está em um grupo.' }, 409);
+  const g = await db.prepare('SELECT gr.* FROM grupo_guias gg JOIN grupos gr ON gr.id = gg.grupo_id WHERE gg.guia_id = ?').bind(id).first();
+  if (!g || !podeGerirGrupo(u, g)) return c.json({ erro: 'Somente o profissional responsável pelo grupo pode encerrar a participação.' }, 403);
+  const motivo = txt(b.motivo), obs = txt(b.observacao);
+  if (!MOTIVOS_GRUPO.includes(motivo)) return c.json({ erro: 'Informe o motivo do encerramento.' }, 400);
+  await db.batch([
+    db.prepare('UPDATE guias SET status = ?, desfecho = ?, data_encerramento = ?, encerrado_por = ? WHERE id = ?').bind(ST.ENCERRADA, motivo, new Date().toISOString(), u.nome, id),
+    hist(db, id, u, ST.GRUPO, ST.ENCERRADA, 'Participação em grupo encerrada', `${g.nome}: ${motivo}${obs ? ' — ' + obs : ''}`),
+  ]);
   return c.json({ sucesso: true });
 });
 

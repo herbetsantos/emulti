@@ -1,6 +1,9 @@
 .dev.vars
+dev.vars
+.env
 node_modules
 .wrangler
 database/credenciais.csv
 database/profissionais.sql
 database/profissionais.csv
+backup*.sql

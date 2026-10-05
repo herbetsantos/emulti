@@ -1,14 +1,14 @@
-CREATE TABLE unidades (
+CREATE TABLE IF NOT EXISTS unidades (
     id TEXT PRIMARY KEY,
     nome TEXT NOT NULL
 );
 
-CREATE TABLE equipes (
+CREATE TABLE IF NOT EXISTS equipes (
     id TEXT PRIMARY KEY,
     nome TEXT NOT NULL
 );
 
-CREATE TABLE equipe_unidades (
+CREATE TABLE IF NOT EXISTS equipe_unidades (
     equipe_id TEXT NOT NULL,
     unidade_id TEXT NOT NULL,
     PRIMARY KEY (equipe_id, unidade_id),
@@ -16,7 +16,7 @@ CREATE TABLE equipe_unidades (
     FOREIGN KEY (unidade_id) REFERENCES unidades(id) ON DELETE CASCADE
 );
 
-CREATE TABLE usuarios (
+CREATE TABLE IF NOT EXISTS usuarios (
     id TEXT PRIMARY KEY,
     username TEXT UNIQUE NOT NULL,
     senha_hash TEXT NOT NULL,
@@ -31,7 +31,7 @@ CREATE TABLE usuarios (
     FOREIGN KEY (unidade_id) REFERENCES unidades(id)
 );
 
-CREATE TABLE permissoes_cruzadas (
+CREATE TABLE IF NOT EXISTS permissoes_cruzadas (
     especialidade_origem TEXT NOT NULL,
     especialidade_destino TEXT NOT NULL,
     concedido_por TEXT NOT NULL,
@@ -39,7 +39,7 @@ CREATE TABLE permissoes_cruzadas (
     PRIMARY KEY (especialidade_origem, especialidade_destino)
 );
 
-CREATE TABLE guias (
+CREATE TABLE IF NOT EXISTS guias (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     cpf_paciente TEXT NOT NULL,
     nome_paciente TEXT NOT NULL,
@@ -65,7 +65,7 @@ CREATE TABLE guias (
     FOREIGN KEY (equipe_id) REFERENCES equipes(id)
 );
 
-CREATE TABLE guia_contatos (
+CREATE TABLE IF NOT EXISTS guia_contatos (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     guia_id INTEGER NOT NULL,
     data_hora TEXT NOT NULL,
@@ -77,7 +77,7 @@ CREATE TABLE guia_contatos (
     FOREIGN KEY (guia_id) REFERENCES guias(id) ON DELETE CASCADE
 );
 
-CREATE TABLE guia_historico (
+CREATE TABLE IF NOT EXISTS guia_historico (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     guia_id INTEGER NOT NULL,
     data_hora TEXT NOT NULL,
@@ -90,13 +90,13 @@ CREATE TABLE guia_historico (
     FOREIGN KEY (guia_id) REFERENCES guias(id) ON DELETE CASCADE
 );
 
-CREATE TABLE etiquetas (
+CREATE TABLE IF NOT EXISTS etiquetas (
     id TEXT PRIMARY KEY,
     nome TEXT NOT NULL,
     escopo TEXT NOT NULL
 );
 
-CREATE TABLE guias_etiquetas (
+CREATE TABLE IF NOT EXISTS guias_etiquetas (
     guia_id INTEGER NOT NULL,
     etiqueta_id TEXT NOT NULL,
     PRIMARY KEY (guia_id, etiqueta_id),
@@ -104,7 +104,7 @@ CREATE TABLE guias_etiquetas (
     FOREIGN KEY (etiqueta_id) REFERENCES etiquetas(id) ON DELETE CASCADE
 );
 
-CREATE TABLE grupos (
+CREATE TABLE IF NOT EXISTS grupos (
     id TEXT PRIMARY KEY,
     nome TEXT NOT NULL,
     especialidade TEXT NOT NULL,
@@ -115,7 +115,7 @@ CREATE TABLE grupos (
     FOREIGN KEY (equipe_id) REFERENCES equipes(id)
 );
 
-CREATE TABLE grupo_horarios (
+CREATE TABLE IF NOT EXISTS grupo_horarios (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     grupo_id TEXT NOT NULL,
     dia_semana INTEGER NOT NULL,
@@ -124,7 +124,7 @@ CREATE TABLE grupo_horarios (
     FOREIGN KEY (grupo_id) REFERENCES grupos(id) ON DELETE CASCADE
 );
 
-CREATE TABLE grupo_guias (
+CREATE TABLE IF NOT EXISTS grupo_guias (
     grupo_id TEXT NOT NULL,
     guia_id INTEGER NOT NULL,
     data_inclusao DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -132,3 +132,15 @@ CREATE TABLE grupo_guias (
     FOREIGN KEY (grupo_id) REFERENCES grupos(id) ON DELETE CASCADE,
     FOREIGN KEY (guia_id) REFERENCES guias(id) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS login_falhas (
+    chave TEXT PRIMARY KEY,
+    n INTEGER NOT NULL,
+    ate TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_guias_equipe ON guias(equipe_id);
+CREATE INDEX IF NOT EXISTS idx_guias_status ON guias(status);
+CREATE INDEX IF NOT EXISTS idx_grupo_horarios_grupo ON grupo_horarios(grupo_id);
+CREATE INDEX IF NOT EXISTS idx_guia_contatos_guia ON guia_contatos(guia_id);
+CREATE INDEX IF NOT EXISTS idx_guia_historico_guia ON guia_historico(guia_id);

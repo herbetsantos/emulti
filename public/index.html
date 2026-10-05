@@ -201,6 +201,8 @@ details.ac-hist{margin:4px 0 16px}details.ac-hist summary{cursor:pointer;font-we
 
 <dialog id="dlgA"><form id="dlgAF"><h2 id="dlgATit" style="margin-bottom:14px"></h2><div id="dlgAErr" class="err hidden" role="alert"></div><div id="dlgACampos"></div><div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px"><button type="button" id="dlgACan">Cancelar</button><button class="primary" id="dlgASal">Salvar</button></div></form></dialog>
 
+<dialog id="dlgGM"><h2 id="dlgGMTit" style="margin-bottom:14px"></h2><div id="gmErr" class="err hidden" role="alert"></div><div id="gmLista"></div><div class="actions"><button type="button" class="ghost" id="gmFechar">Fechar</button></div></dialog>
+
 <dialog id="dlgG"><form id="fGrupo">
   <h2 id="dlgGTit" style="margin-bottom:14px"></h2>
   <div id="gpErr" class="err hidden" role="alert"></div>
@@ -286,6 +288,7 @@ function dicaStatus(g){
     if(g.consulta_passou)return c+w('Registrar comparecimento ou falta',1);
     return c+(g.comunicacao_realizada==='Sim'?w('Paciente comunicado'):w('Comunicar paciente'+(g.n_contatos?' ('+g.n_contatos+' tentativa'+(g.n_contatos>1?'s':'')+')':''),1));
   }
+  if(g.status==='Grupo agendado')return w('Grupo: '+(g.grupo_nome||'—'));
   if(g.status==='Encerrada')return w(g.desfecho||'');
   return '';
 }
@@ -364,7 +367,14 @@ function renderAcomp(){
   x+=`</div><div id="acErr" class="err hidden" role="alert"></div>`;
   if(st==='Aguardando agendamento'){
     x+=g.modalidade==='Atendimento Individual'?formAgenda('Registrar o agendamento da primeira consulta','Registrar agendamento',false)
-      :'<div class="ac-box"><b>Atividade coletiva</b><p class="ac-muted">Esta guia aguarda alocação em um grupo.</p></div>';
+      :'<div class="ac-box"><b>Atividade coletiva</b><p class="ac-muted">Escolha o grupo em que o paciente vai participar.</p><div class="ac-row"><select id="acGrp" aria-label="Grupo"><option value="">Carregando grupos…</option></select><button type="button" class="primary" data-act="alocar">Alocar ao grupo</button></div></div>';
+  }
+  if(st==='Grupo agendado'){
+    const gp=AC.grupo;
+    x+=`<div class="ac-box"><b>Grupo: ${esc(gp?gp.nome:'—')}</b><p class="ac-muted">${gp?esc('Responsável: '+(gp.profissional_nome||'—')+(gp.horarios.length?' · '+gp.horarios.map(k=>DIAS_C[k.dia_semana]+' '+k.hora_inicio+'–'+k.hora_fim).join(', '):'')):''}</p>`;
+    if(AC.pode_gerir_grupo)x+=`<div class="ac-row"><button type="button" class="mini" data-act="rmgrupo">Remover do grupo</button></div></div>
+      <div class="ac-box"><b>Encerrar a participação</b><div class="ac-row"><select id="acMotG" aria-label="Motivo do encerramento">${opt(AC.motivos_grupo)}</select><input id="acObsG" placeholder="Observação (opcional)" aria-label="Observação"><button type="button" class="primary" data-act="encerrargrupo">Encerrar participação</button></div>`;
+    x+='</div>';
   }
   if(st==='Agendamento realizado'){
     x+=`<div class="ac-row"><button type="button" class="mini" data-act="remarcar">Remarcar consulta</button></div>`+formAgenda('Remarcar a primeira consulta','Salvar nova data',true);
@@ -389,7 +399,18 @@ function renderAcomp(){
     ...historico.map(k=>({t:k.data_hora,txt:k.acao+(k.detalhe?' — '+k.detalhe:''),u:k.usuario_nome}))].sort((a,b)=>a.t<b.t?-1:1);
   x+=`<details class="ac-hist"><summary>Histórico (${ev.length})</summary><ol class="tl">${ev.map(k=>`<li><time>${fmtDH(k.t)}</time>${esc(k.txt)} <small>${k.u?'· '+esc(k.u):''}</small></li>`).join('')}</ol></details>`;
   $('acomp').innerHTML=x;
+  if($('acGrp'))preencherGrupos(g);
   if(st!=='Aguardando agendamento')setModal(g.modalidade,true);
+}
+async function preencherGrupos(g){
+  const sel=$('acGrp');
+  try{
+    const lista=(await api('/api/grupos')).filter(k=>k.status==='Ativo'&&k.equipe_id===g.equipe_id&&k.especialidade===g.especialidade&&(user.role==='Super Administrador'||k.profissional_id===user.id));
+    if($('acGrp')!==sel)return;
+    sel.innerHTML=lista.length?'<option value="">Escolha o grupo…</option>'+lista.map(k=>`<option value="${esc(k.id)}">${esc(k.nome+' — '+k.horarios.map(x=>DIAS_C[x.dia_semana]+' '+x.hora_inicio).join(', '))}</option>`).join('')
+      :'<option value="">Nenhum grupo ativo seu para esta especialidade</option>';
+    sel.nextElementSibling.disabled=!lista.length;
+  }catch(e){sel.innerHTML='<option value="">Não foi possível carregar os grupos</option>';}
 }
 $('acomp').addEventListener('change',e=>{if(e.target.name==='acDes')$('acFalta').classList.toggle('hidden',e.target.value!=='Faltou');});
 $('acomp').addEventListener('click',async e=>{
@@ -405,6 +426,9 @@ $('acomp').addEventListener('click',async e=>{
       if(!confirm('Registrar “'+r.value+'” e encerrar esta guia?'))return;
       await post('desfecho',{resultado:r.value,motivo_falta:$('acMot')?.value,motivo_falta_obs:$('acMotObs')?.value});
     }
+    else if(a==='alocar'){const gp=$('acGrp').value;if(!gp)return erro('Escolha o grupo.');await api(`/api/grupos/${gp}/guias`,{method:'POST',body:JSON.stringify({guia_id:id})});}
+    else if(a==='rmgrupo'){if(!confirm('Remover o paciente deste grupo? A guia volta a aguardar alocação.'))return;await api(`/api/grupos/${AC.grupo.id}/guias/${id}`,{method:'DELETE'});}
+    else if(a==='encerrargrupo'){if(!confirm('Encerrar a participação do paciente no grupo? A guia será encerrada.'))return;await post('encerrar-grupo',{motivo:$('acMotG').value,observacao:$('acObsG').value});}
     else if(a==='reabrir'){if(!confirm('Reabrir esta guia? A correção fica registrada no histórico.'))return;await post('reabrir');}
     await acomp(id);carregar();
   }catch(ex){erro(ex.message);}
@@ -436,7 +460,7 @@ $('portalBtn').onclick=()=>{$('portalBtn').disabled=true;$('portalBtn').querySel
 addEventListener('pageshow',()=>{$('portalBtn').disabled=false;$('portalBtn').querySelector('span').textContent='Acessar com Apoio APS';});
 (function(){ // retorno do Apoio APS: token no fragmento (#sso=) ou erro na URL (?erro=)
   const q=new URLSearchParams(location.search),t=new URLSearchParams(location.hash.slice(1)).get('sso');
-  const erros={handoff:'Não foi possível concluir o acesso pelo Apoio APS. Tente novamente.','sem-acesso':'Você entrou no Apoio APS, mas ainda não tem acesso ao Olhar eMulti. Procure a gestão da sua equipe.'};
+  const erros={handoff:'Não foi possível concluir o acesso pelo Apoio APS. Tente novamente.','admin-sso':'Contas de Super Administrador entram apenas com usuário e senha do Olhar.','sem-acesso':'Você entrou no Apoio APS, mas ainda não tem acesso ao Olhar eMulti. Procure a gestão da sua equipe.'};
   if(t){try{const b=t.split('.')[1].replace(/-/g,'+').replace(/_/g,'/');const p=JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(b),c=>c.charCodeAt(0))));
     token=t;user={id:p.id,nome:p.nome,role:p.role,esp:p.esp,eq:p.eq,uni:p.uni};sessionStorage.setItem('token',token);sessionStorage.setItem('user',JSON.stringify(user));}catch{}}
   if(t||q.has('erro'))history.replaceState(null,'',location.pathname);
@@ -476,7 +500,7 @@ async function carregarGrupos(){
     $('tblG').innerHTML=GR.map(g=>{const meu=user.role==='Super Administrador'||g.profissional_id===user.id;
       return `<tr><td><b>${esc(g.nome)}</b></td><td>${esc(g.especialidade)}</td><td>${esc(g.profissional_nome||'—')}</td>
       <td>${g.horarios.map(x=>`<span class="tag">${esc(DIAS_C[x.dia_semana]+' '+x.hora_inicio+'–'+x.hora_fim)}</span>`).join('')||'—'}</td><td>${g.total_guias}</td><td>${esc(g.status)}</td>
-      <td>${meu?`<button class="mini" data-ge="${esc(g.id)}">Editar</button> <button class="mini" data-gd="${esc(g.id)}">Excluir</button>`:''}</td></tr>`;}).join('')
+      <td><button class="mini" data-gm="${esc(g.id)}">Participantes</button>${meu?` <button class="mini" data-ge="${esc(g.id)}">Editar</button> <button class="mini" data-gd="${esc(g.id)}">Excluir</button>`:''}</td></tr>`;}).join('')
       ||'<tr><td colspan="7" style="color:var(--muted)">Nenhum grupo cadastrado ainda.</td></tr>';
   }catch(e){if(token)alert(e.message);}
 }
@@ -497,11 +521,27 @@ async function abrirGrupo(g){
   }
   $('dlgG').showModal();
 }
+let gmId=null;
+async function abrirMembros(id){
+  gmId=id;$('gmErr').classList.add('hidden');
+  try{
+    const r=await api(`/api/grupos/${id}/guias`);
+    $('dlgGMTit').textContent='Participantes — '+r.grupo.nome;
+    $('gmLista').innerHTML=r.guias.length?`<table class="data-table"><thead><tr><th>Paciente</th><th>Prioridade</th><th></th></tr></thead><tbody>${r.guias.map(k=>`<tr><td><b>${esc(k.nome_paciente)}</b><br><small>${esc(fmtCpf(k.cpf_paciente))}</small></td><td>${esc(PRI[k.prioridade]??k.prioridade)}</td><td>${r.pode_gerir?`<button class="mini" data-gmrm="${+k.id}">Remover</button>`:''}</td></tr>`).join('')}</tbody></table>`
+      :'<p style="color:var(--muted)">Nenhum participante ainda. Abra uma guia de atividade coletiva e use “Alocar ao grupo”.</p>';
+    if(!$('dlgGM').open)$('dlgGM').showModal();
+  }catch(err){alert(err.message);}
+}
+$('gmFechar').onclick=()=>$('dlgGM').close();
+$('gmLista').onclick=async e=>{const k=e.target.dataset?.gmrm;if(!k||!confirm('Remover o paciente deste grupo? A guia volta a aguardar alocação.'))return;
+  try{await api(`/api/grupos/${gmId}/guias/${k}`,{method:'DELETE'});await abrirMembros(gmId);carregarGrupos();carregar();}
+  catch(err){$('gmErr').textContent=err.message;$('gmErr').classList.remove('hidden');}};
 $('btnNovoGrupo').onclick=()=>abrirGrupo(null);
 $('gpCan').onclick=()=>$('dlgG').close();
 $('gpAdd').onclick=()=>linhaHor({dia_semana:1,hora_inicio:'08:00',hora_fim:'09:00'});
 $('gpHor').onclick=e=>{if(e.target.dataset.rm!==undefined&&$('gpHor').children.length>1)e.target.closest('.hrow').remove();};
-$('tblG').onclick=async e=>{const ed=e.target.dataset?.ge,dl=e.target.dataset?.gd;
+$('tblG').onclick=async e=>{const ed=e.target.dataset?.ge,dl=e.target.dataset?.gd,gm=e.target.dataset?.gm;
+  if(gm)abrirMembros(gm);
   if(ed)abrirGrupo(GR.find(x=>x.id===ed));
   if(dl){if(!confirm('Excluir este grupo?'))return;try{await api('/api/grupos/'+dl,{method:'DELETE'});carregarGrupos();}catch(err){alert(err.message);}}};
 $('fGrupo').onsubmit=async e=>{e.preventDefault();
