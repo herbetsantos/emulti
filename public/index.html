@@ -460,7 +460,7 @@ $('portalBtn').onclick=()=>{$('portalBtn').disabled=true;$('portalBtn').querySel
 addEventListener('pageshow',()=>{$('portalBtn').disabled=false;$('portalBtn').querySelector('span').textContent='Acessar com Apoio APS';});
 (function(){ // retorno do Apoio APS: token no fragmento (#sso=) ou erro na URL (?erro=)
   const q=new URLSearchParams(location.search),t=new URLSearchParams(location.hash.slice(1)).get('sso');
-  const erros={handoff:'Não foi possível concluir o acesso pelo Apoio APS. Tente novamente.','admin-sso':'Contas de Super Administrador entram apenas com usuário e senha do Olhar.','sem-acesso':'Você entrou no Apoio APS, mas ainda não tem acesso ao Olhar eMulti. Procure a gestão da sua equipe.'};
+  const erros={handoff:'Não foi possível concluir o acesso pelo Apoio APS. Tente novamente.','admin-sso':'Esta conta de Super Administrador ainda não está vinculada ao Apoio APS. Entre com usuário e senha do Olhar.',vinculo:'Este usuário já está vinculado a outra conta do Apoio APS. Procure a gestão do sistema.','sem-acesso':'Você entrou no Apoio APS, mas ainda não tem acesso ao Olhar eMulti. Procure a gestão da sua equipe.'};
   if(t){try{const b=t.split('.')[1].replace(/-/g,'+').replace(/_/g,'/');const p=JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(b),c=>c.charCodeAt(0))));
     token=t;user={id:p.id,nome:p.nome,role:p.role,esp:p.esp,eq:p.eq,uni:p.uni};sessionStorage.setItem('token',token);sessionStorage.setItem('user',JSON.stringify(user));}catch{}}
   if(t||q.has('erro'))history.replaceState(null,'',location.pathname);

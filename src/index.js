@@ -185,18 +185,29 @@ app.get('/', async (c) => {
   if (segredoFraco(c.env.JWT_SECRET)) { console.error('JWT_SECRET inválido'); return c.redirect('/?erro=handoff', 302); }
   c.header('Cache-Control', 'no-store');
   try {
-    const h = await c.env.DB.prepare(`SELECT h.expires_at, h.used, u.username, u.name, u.active
+    const h = await c.env.DB.prepare(`SELECT h.expires_at, h.used, h.user_id, u.username, u.name, u.active
       FROM handoff_tokens h JOIN users u ON u.id = h.user_id WHERE h.token = ?`).bind(handoff).first();
     if (!h || h.used || !h.active || new Date(h.expires_at).getTime() < Date.now()) return c.redirect('/?erro=handoff', 302);
     const upd = await c.env.DB.prepare('UPDATE handoff_tokens SET used = 1 WHERE token = ? AND used = 0').bind(handoff).run();
     if (!upd.meta?.changes) return c.redirect('/?erro=handoff', 302);
-    // Só entra quem já foi cadastrado no Olhar por um Super Administrador (nada de cadastro automático no primeiro acesso).
-    const u = await c.env.DB_REGULACAO.prepare('SELECT * FROM usuarios WHERE lower(username) = ? AND ativo = 1')
-      .bind(String(h.username).trim().toLowerCase()).first();
-    if (!u) return c.redirect('/?erro=sem-acesso', 302);
-    // O vínculo com o Apoio APS é só pelo username. Para não permitir que um login homônimo lá vire administrador aqui,
-    // o Super Administrador entra apenas com usuário e senha do Olhar.
-    if (u.nivel_acesso === 'Super Administrador') return c.redirect('/?erro=admin-sso', 302);
+    // O vínculo é pelo ID imutável do Apoio APS (users.id, coluna usuarios.apoio_id), não pelo username:
+    // um login homônimo lá não consegue assumir um cadastro daqui.
+    const db = c.env.DB_REGULACAO, apoioId = String(h.user_id);
+    let u = await db.prepare('SELECT * FROM usuarios WHERE apoio_id = ?').bind(apoioId).first();
+    if (u) {
+      if (!u.ativo) return c.redirect('/?erro=sem-acesso', 302);
+    } else {
+      // Primeiro acesso: localiza o cadastro pelo username e grava o vínculo com o ID. Só vale para cadastro ainda sem vínculo.
+      // Nada de cadastro automático: quem não foi criado por um Super Administrador não entra.
+      u = await db.prepare('SELECT * FROM usuarios WHERE lower(username) = ? AND ativo = 1')
+        .bind(String(h.username).trim().toLowerCase()).first();
+      if (!u) return c.redirect('/?erro=sem-acesso', 302);
+      if (u.apoio_id) return c.redirect('/?erro=vinculo', 302); // esse login já pertence a outra conta do Apoio APS
+      // Super Administrador nunca é vinculado automaticamente por username: o vínculo é feito à mão (ver LEIA-ME).
+      if (u.nivel_acesso === 'Super Administrador') return c.redirect('/?erro=admin-sso', 302);
+      const v = await db.prepare('UPDATE usuarios SET apoio_id = ? WHERE id = ? AND apoio_id IS NULL').bind(apoioId, u.id).run();
+      if (!v.meta?.changes) return c.redirect('/?erro=vinculo', 302);
+    }
     const { token } = await emitirToken(c, u);
     return c.redirect(`/#sso=${token}`, 302); // fragmento não é enviado a servidores nem registrado em logs
   } catch (e) {

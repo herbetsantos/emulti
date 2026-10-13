@@ -27,9 +27,11 @@ CREATE TABLE IF NOT EXISTS usuarios (
     unidade_id TEXT,
     ativo BOOLEAN DEFAULT 1,
     data_criacao DATETIME DEFAULT CURRENT_TIMESTAMP,
+    apoio_id TEXT, -- ID imutável (users.id) da conta no Apoio APS; vínculo do login integrado
     FOREIGN KEY (equipe_id) REFERENCES equipes(id),
     FOREIGN KEY (unidade_id) REFERENCES unidades(id)
 );
+CREATE UNIQUE INDEX IF NOT EXISTS idx_usuarios_apoio_id ON usuarios(apoio_id) WHERE apoio_id IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS permissoes_cruzadas (
     especialidade_origem TEXT NOT NULL,

@@ -13,7 +13,7 @@ Para gerar novos hashes/senhas: edite e rode `npm run seed:gerar`.
 ## Produção
 ```
 npx wrangler d1 create emulti-db            # cole o database_id no wrangler.toml
-npx wrangler d1 execute emulti-db --remote --file=database/schema.sql   # pode ser reaplicado (IF NOT EXISTS)
+npx wrangler d1 execute emulti-db --remote --file=database/schema.sql   # banco novo
 # Banco já existente (criado antes desta versão): faça backup e rode a migração 004
 #   npx wrangler d1 export emulti-db --remote --output=backup.sql
 #   npx wrangler d1 execute emulti-db --remote --file="database/Migracao 004 seguranca e indices.sql"
@@ -25,10 +25,18 @@ npx wrangler deploy
 ## Login integrado (Apoio APS)
 O botão "Acessar com Apoio APS" usa o mesmo fluxo do portal de Regulação. Requisitos:
 - o Apoio APS precisa aceitar o endereço deste Worker como destino de retorno do login;
+- **banco já existente:** aplique antes `database/Migracao 005 vinculo apoio id.sql` (uma única vez; faça backup). Bancos novos já vêm com a coluna `apoio_id`;
 - cada profissional deve ter cadastro no Olhar com o **mesmo username** do Apoio APS (coluna `username` do `profissionais.csv`);
-- quem se autentica no Apoio APS sem cadastro ativo vê "sem acesso ao Olhar eMulti" (o cadastro NÃO é criado automaticamente);
-- contas de Super Administrador não entram pelo Apoio APS, só com usuário e senha do Olhar (o vínculo é por username).
-O teste só funciona no endereço publicado, pois o banco do Apoio APS não existe no ambiente local.
+- quem se autentica no Apoio APS sem cadastro ativo vê "sem acesso ao Olhar eMulti" (o cadastro NÃO é criado automaticamente).
+
+**Como o vínculo funciona.** O vínculo definitivo é pelo ID imutável da conta no Apoio APS (`usuarios.apoio_id` = `users.id` do Apoio APS), e não pelo username:
+- *Primeiro acesso* de um profissional comum: o Olhar acha o cadastro pelo username e grava o `apoio_id`. A partir daí só esse ID entra naquele cadastro; se outra pessoa do Apoio APS passar a usar o mesmo username, vê "já está vinculado a outra conta".
+- *Super Administrador* nunca é vinculado automaticamente. Para liberar o acesso integrado de um administrador, vincule à mão, conferindo que a conta do Apoio APS é mesmo dele:
+```
+npx wrangler d1 execute portal-saude-db --remote --command "SELECT id, username, name, active FROM users WHERE username = 'fulano'"
+npx wrangler d1 execute emulti-db --remote --command "UPDATE usuarios SET apoio_id = '<ID acima>' WHERE username = 'fulano'"
+```
+- Para desfazer um vínculo (conta recriada no Apoio APS, por exemplo): `UPDATE usuarios SET apoio_id = NULL WHERE username = 'fulano'`.
 
 ## Segurança (o que o Worker faz)
 - O Worker recusa operar se `JWT_SECRET` faltar, tiver menos de 32 caracteres ou for o do exemplo.
