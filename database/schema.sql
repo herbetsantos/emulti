@@ -64,8 +64,11 @@ CREATE TABLE IF NOT EXISTS guias (
     motivo_falta_obs TEXT,
     data_encerramento DATETIME,
     encerrado_por TEXT,
-    FOREIGN KEY (equipe_id) REFERENCES equipes(id)
+    unidade_id TEXT, -- unidade de origem do encaminhamento (uma das atendidas pela equipe)
+    FOREIGN KEY (equipe_id) REFERENCES equipes(id),
+    FOREIGN KEY (unidade_id) REFERENCES unidades(id)
 );
+CREATE INDEX IF NOT EXISTS idx_guias_unidade ON guias(unidade_id);
 
 CREATE TABLE IF NOT EXISTS guia_contatos (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

@@ -234,6 +234,8 @@ details.ac-hist{margin:4px 0 16px}details.ac-hist summary{cursor:pointer;font-we
       <div class="field"><label for="gData">Data de emissão</label><input id="gData" type="date" required></div>
       <div class="field" id="fEquipe"><label for="gEquipe">Equipe</label><select id="gEquipe"></select></div>
     </div>
+    <div class="field" id="fUnidade"><label for="gUnidade">Unidade</label><select id="gUnidade"></select></div>
+    <p class="ac-muted hidden" id="gOrigem"></p>
     <div class="field"><label for="gMotivo">Motivo do encaminhamento</label><textarea id="gMotivo" rows="2" required></textarea></div>
     <div class="field"><label>Etiquetas</label><div class="chips" id="gEtiq"></div></div>
     <div class="actions"><button type="button" class="ghost" id="btnCancelar">Fechar</button><button class="primary" id="btnSalvarG">Salvar guia</button></div>
@@ -242,7 +244,7 @@ details.ac-hist{margin:4px 0 16px}details.ac-hist summary{cursor:pointer;font-we
 
 <script>
 const ESPECIALIDADES=['Psicologia','Fisioterapia','Nutrição','Fonoaudiologia','Serviço Social','Educação Física','Terapia Ocupacional'];
-let token=sessionStorage.getItem('token'), user=JSON.parse(sessionStorage.getItem('user')||'null'), guias=[], editId=null, ETQ=[], GR=[], modal='';
+let token=sessionStorage.getItem('token'), user=JSON.parse(sessionStorage.getItem('user')||'null'), guias=[], editId=null, ETQ=[], GR=[], EQS=[], modal='';
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmtCpf=c=>String(c).replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/,'$1.$2.$3-$4');
@@ -299,7 +301,7 @@ async function carregar(){
       <td><b>${esc(g.nome_paciente)}</b><br><small>${esc(fmtCpf(g.cpf_paciente))}</small></td>
       <td><span class="pri p${+g.prioridade}" title="Prioridade ${+g.prioridade}">${PRI[g.prioridade]??g.prioridade}</span></td>
       <td>${esc(g.especialidade)}</td><td title="${esc(g.modalidade||'')}">${esc(ELEG[g.modalidade]||'—')}</td><td>${(g.etiquetas?g.etiquetas.split(','):[]).map(i=>`<span class="tag">${esc(ETQ.find(e=>e.id===i)?.nome||i)}</span>`).join('')||'—'}</td>
-      <td><span class="badge badge--user">${esc(g.status)}</span>${dicaStatus(g)}</td><td>${esc(g.equipe_nome||g.equipe_id)}</td></tr>`).join('')
+      <td><span class="badge badge--user">${esc(g.status)}</span>${dicaStatus(g)}</td><td>${esc(g.equipe_nome||g.equipe_id)}${g.unidade_nome?`<br><small>${esc(g.unidade_nome)}</small>`:''}</td></tr>`).join('')
       ||'<tr><td colspan="7" style="color:var(--muted)">Nenhuma guia ainda. Use “+ Nova guia” para cadastrar a primeira.</td></tr>';
   }catch(e){if(token)alert(e.message);}
 }
@@ -325,8 +327,13 @@ async function abrir(g){
   $('gEsp').innerHTML=(execu&&!g?[user.esp]:g?[g.especialidade]:ESPECIALIDADES).map(x=>`<option>${esc(x)}</option>`).join('');
   $('gEsp').disabled=!!g||execu;
   try{ETQ=await api('/api/etiquetas');}catch{}
-  $('fEquipe').classList.toggle('hidden',execu||!!g);
-  if(!execu&&!g){const eq=await api('/api/equipes');$('gEquipe').innerHTML=eq.map(x=>`<option value="${esc(x.id)}">${esc(x.nome)}</option>`).join('');}
+  $('fEquipe').classList.toggle('hidden',execu||!!g);$('fUnidade').classList.toggle('hidden',!!g);
+  $('gOrigem').classList.toggle('hidden',!g);$('gOrigem').textContent=g?'Equipe: '+(g.equipe_nome||g.equipe_id)+' · Unidade: '+(g.unidade_nome||'não informada'):'';
+  if(!g){
+    try{EQS=await api('/api/equipes');}catch{EQS=[];}
+    if(!execu)$('gEquipe').innerHTML=EQS.map(x=>`<option value="${esc(x.id)}">${esc(x.nome)}</option>`).join('');
+    preencherUnidades();
+  }
   if(g){
     $('gNome').value=g.nome_paciente;$('gCpf').value=fmtCpf(g.cpf_paciente);$('gPri').value=g.prioridade;$('gData').value=g.data_emissao;
     $('gMotivo').value=g.motivo_encaminhamento;
@@ -337,12 +344,22 @@ async function abrir(g){
   $('dlg').showModal();
   if(g)acomp(g.id);
 }
+// A unidade só pode ser uma das que a equipe atende; o Gerenciamento Local usa sempre a sua.
+function preencherUnidades(){
+  const eqId=user.role==='Profissional Executante'?user.eq:$('gEquipe').value;
+  let un=(EQS.find(x=>x.id===eqId)||{unidades:[]}).unidades;
+  if(user.role==='Gerenciamento Local')un=un.filter(x=>x.id===user.uni);
+  const o=un.map(x=>`<option value="${esc(x.id)}">${esc(x.nome)}</option>`).join('');
+  $('gUnidade').innerHTML=un.length===1?o:un.length?'<option value="" disabled selected hidden>Escolha a unidade…</option>'+o:'<option value="" disabled selected>Equipe sem unidade vinculada</option>';
+  $('gUnidade').disabled=un.length===1&&user.role==='Gerenciamento Local';
+}
+$('gEquipe').onchange=preencherUnidades;
 $('btnNova').onclick=()=>abrir(null);
 $('btnCancelar').onclick=()=>$('dlg').close();
 $('fGuia').onsubmit=async e=>{
   e.preventDefault();
   const body={nome:$('gNome').value,cpf:$('gCpf').value,especialidade:$('gEsp').value,prioridade:$('gPri').value,data_emissao:$('gData').value,
-    motivo_encaminhamento:$('gMotivo').value,equipe_id:$('gEquipe').value,modalidade:modal,etiquetas:etqSel()};
+    motivo_encaminhamento:$('gMotivo').value,equipe_id:$('gEquipe').value,unidade_id:$('gUnidade').value,modalidade:modal,etiquetas:etqSel()};
   if(!editId&&!modal){$('gErr').textContent='Defina a elegibilidade: Atendimento Individual ou Atividade Coletiva.';$('gErr').classList.remove('hidden');return;}
   try{
     await api(editId?`/api/guias/${editId}`:'/api/guias',{method:editId?'PUT':'POST',body:JSON.stringify(body)});
@@ -383,7 +400,7 @@ function renderAcomp(){
       x+=`<p class="ac-ok">✔ Paciente comunicado${c?' em '+fmtDH(c.data_hora)+' ('+esc(c.meio)+')':''}</p>`;}
     else{
       x+=`<div class="ac-prog">Tentativas válidas: <b>${r.tentativas}/${r.min_tentativas}</b> · Dias diferentes: <b>${r.dias}/${r.min_dias}</b></div>
-      <div class="ac-row"><select id="acMeio" aria-label="Meio de contato">${opt(AC.meios)}</select><select id="acRes" aria-label="Resultado do contato"><option value="">Resultado do contato…</option>${opt(AC.resultados)}</select><input type="text" id="acObs" placeholder="Observação (opcional)" maxlength="300"><button type="button" class="primary" data-act="contato">Registrar tentativa</button></div>
+      <div class="ac-row"><select id="acMeio" aria-label="Meio de contato">${opt(AC.meios)}</select><select id="acRes" aria-label="Resultado do contato"><option value="" disabled selected hidden>Resultado do contato…</option>${opt(AC.resultados)}</select><input type="text" id="acObs" placeholder="Observação (opcional)" maxlength="300"><button type="button" class="primary" data-act="contato">Registrar tentativa</button></div>
       <p class="ac-muted">Para arquivar por falta de contato: ${r.min_tentativas} tentativas sem sucesso, com no mínimo ${r.intervalo_min} min entre elas, em pelo menos ${r.min_dias} dias diferentes.</p>
       <div class="ac-row" style="margin-top:8px"><button type="button" class="ghost" data-act="arquivar"${r.ok?'':' disabled'}>Arquivar por falta de contato</button></div>`;
     }
@@ -407,7 +424,7 @@ async function preencherGrupos(g){
   try{
     const lista=(await api('/api/grupos')).filter(k=>k.status==='Ativo'&&k.equipe_id===g.equipe_id&&k.especialidade===g.especialidade&&(user.role==='Super Administrador'||k.profissional_id===user.id));
     if($('acGrp')!==sel)return;
-    sel.innerHTML=lista.length?'<option value="">Escolha o grupo…</option>'+lista.map(k=>`<option value="${esc(k.id)}">${esc(k.nome+' — '+k.horarios.map(x=>DIAS_C[x.dia_semana]+' '+x.hora_inicio).join(', '))}</option>`).join('')
+    sel.innerHTML=lista.length?'<option value="" disabled selected hidden>Escolha o grupo…</option>'+lista.map(k=>`<option value="${esc(k.id)}">${esc(k.nome+' — '+k.horarios.map(x=>DIAS_C[x.dia_semana]+' '+x.hora_inicio).join(', '))}</option>`).join('')
       :'<option value="">Nenhum grupo ativo seu para esta especialidade</option>';
     sel.nextElementSibling.disabled=!lista.length;
   }catch(e){sel.innerHTML='<option value="">Não foi possível carregar os grupos</option>';}

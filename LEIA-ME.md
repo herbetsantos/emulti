@@ -38,6 +38,17 @@ npx wrangler d1 execute emulti-db --remote --command "UPDATE usuarios SET apoio_
 ```
 - Para desfazer um vínculo (conta recriada no Apoio APS, por exemplo): `UPDATE usuarios SET apoio_id = NULL WHERE username = 'fulano'`.
 
+## Unidade e equipe da guia
+Cada guia grava a **equipe** responsável e a **unidade** de origem (`guias.unidade_id`). A unidade precisa ser uma das que a equipe atende (vínculo em Administração → Equipes).
+- *Profissional Executante*: a equipe vem do cadastro; se ela atende mais de uma unidade, ele escolhe; se atende só uma, é automática.
+- *Gerenciamento Local*: a unidade é sempre a dele.
+- *Super Administrador / Gerenciamento*: escolhe a equipe e, em seguida, a unidade.
+- **Quem vê o quê:** o executante vê só as guias da sua equipe; o Gerenciamento Local, só as da sua unidade (inclusive nos participantes dos grupos); administradores veem todas.
+- **Banco já existente:** aplique uma vez `database/Migracao 007 unidade na guia.sql` (guias antigas ficam sem unidade e só os administradores e a equipe as enxergam).
+
+## Grupos (atividade coletiva)
+Para alocar uma guia em um grupo: a guia deve ser de **Atividade Coletiva** e estar **Aguardando agendamento**; o grupo deve estar **Ativo**, ser da **mesma equipe e especialidade** da guia, e só o profissional responsável (ou o Super Administrador) aloca. Guias de Atendimento Individual seguem o fluxo de agendamento e não vão para grupo.
+
 ## Segurança (o que o Worker faz)
 - O Worker recusa operar se `JWT_SECRET` faltar, tiver menos de 32 caracteres ou for o do exemplo.
 - Perfil, equipe e situação do usuário são lidos do banco a cada requisição: inativar ou mudar o perfil vale na hora.

@@ -82,6 +82,15 @@ function escopo(u) {
   return { sql: '1=1', p: [] };
 }
 
+// Escopo das GUIAS: o executante vê só as da sua equipe; o Gerenciamento Local, só as da sua unidade.
+function escopoGuias(u) {
+  if (u.role === 'Profissional Executante') return { sql: 'equipe_id = ?', p: [u.eq ?? null] };
+  if (u.role === 'Gerenciamento Local') return { sql: 'unidade_id = ?', p: [u.uni ?? null] };
+  return { sql: '1=1', p: [] };
+}
+// Nos grupos (que são da equipe), o Gerenciamento Local só enxerga os participantes da sua unidade.
+const soUnidade = (u) => u.role === 'Gerenciamento Local' ? { sql: ' AND g.unidade_id = ?', p: [u.uni ?? null] } : { sql: '', p: [] };
+
 async function podeEditarEspecialidade(db, u, esp) {
   if (u.role !== 'Profissional Executante' || u.esp === esp) return true;
   const r = await db.prepare('SELECT 1 FROM permissoes_cruzadas WHERE especialidade_origem = ? AND especialidade_destino = ?')
@@ -258,15 +267,20 @@ app.get('/api/equipes', async (c) => {
   const s = u.role === 'Profissional Executante' ? { sql: 'id = ?', p: [u.eq] }
     : u.role === 'Gerenciamento Local' ? { sql: 'id IN (SELECT equipe_id FROM equipe_unidades WHERE unidade_id = ?)', p: [u.uni] }
     : { sql: '1=1', p: [] };
-  const { results } = await c.env.DB_REGULACAO.prepare(`SELECT id, nome FROM equipes WHERE ${s.sql} ORDER BY nome`).bind(...s.p).all();
-  return c.json(results);
+  const db = c.env.DB_REGULACAO;
+  const [eq, un] = await Promise.all([
+    db.prepare(`SELECT id, nome FROM equipes WHERE ${s.sql} ORDER BY nome`).bind(...s.p).all(),
+    db.prepare('SELECT eu.equipe_id, un.id, un.nome FROM equipe_unidades eu JOIN unidades un ON un.id = eu.unidade_id ORDER BY un.nome').all(),
+  ]);
+  return c.json(eq.results.map((e) => ({ ...e, unidades: un.results.filter((x) => x.equipe_id === e.id).map(({ id, nome }) => ({ id, nome })) })));
 });
 
 app.get('/api/guias', async (c) => {
-  const s = escopo(c.get('user'));
+  const s = escopoGuias(c.get('user'));
   const { results } = await c.env.DB_REGULACAO
     .prepare(`SELECT guias.*, (SELECT group_concat(etiqueta_id) FROM guias_etiquetas WHERE guia_id = guias.id) AS etiquetas,
       (SELECT nome FROM equipes WHERE id = guias.equipe_id) AS equipe_nome,
+      (SELECT nome FROM unidades WHERE id = guias.unidade_id) AS unidade_nome,
       (SELECT COUNT(*) FROM guia_contatos WHERE guia_id = guias.id) AS n_contatos,
       (SELECT gr.id FROM grupo_guias gg JOIN grupos gr ON gr.id = gg.grupo_id WHERE gg.guia_id = guias.id LIMIT 1) AS grupo_id,
       (SELECT gr.nome FROM grupo_guias gg JOIN grupos gr ON gr.id = gg.grupo_id WHERE gg.guia_id = guias.id LIMIT 1) AS grupo_nome
@@ -283,6 +297,23 @@ const hist = (db, id, u, de, para, acao, detalhe) =>
   db.prepare('INSERT INTO guia_historico (guia_id, data_hora, usuario_id, usuario_nome, status_anterior, status_novo, acao, detalhe) VALUES (?,?,?,?,?,?,?,?)')
     .bind(id, new Date().toISOString(), u.id, u.nome, de, para, acao, detalhe ?? null);
 
+// A unidade da guia precisa ser uma das que a equipe atende. Gerenciamento Local: sempre a sua.
+// Se a equipe atende uma só unidade, ela é assumida; se atende várias, é preciso informar.
+async function resolverUnidade(db, u, equipeId, pedida) {
+  const { results } = await db.prepare('SELECT un.id, un.nome FROM equipe_unidades eu JOIN unidades un ON un.id = eu.unidade_id WHERE eu.equipe_id = ?').bind(equipeId).all();
+  if (!results.length) return { erro: 'Esta equipe não tem unidade vinculada. Vincule-a em Administração → Equipes.', status: 400 };
+  if (u.role === 'Gerenciamento Local') {
+    const m = results.find((x) => x.id === u.uni);
+    return m ? m : { erro: 'Esta equipe não atende a sua unidade.', status: 403 };
+  }
+  const q = txt(pedida);
+  if (q) {
+    const m = results.find((x) => x.id === q);
+    return m ? m : { erro: 'A unidade escolhida não é atendida por esta equipe.', status: 400 };
+  }
+  return results.length === 1 ? results[0] : { erro: 'Informe a unidade da guia.', status: 400 };
+}
+
 app.post('/api/guias', async (c) => {
   const u = c.get('user');
   const db = c.env.DB_REGULACAO;
@@ -296,20 +327,19 @@ app.post('/api/guias', async (c) => {
   // A equipe vem do perfil (executante) ou do corpo (demais perfis, dentro do seu escopo)
   const equipeId = u.role === 'Profissional Executante' ? u.eq : txt(b.equipe_id);
   if (!equipeId) return c.json({ erro: 'Informe a equipe responsável pela guia.' }, 400);
-  if (u.role === 'Gerenciamento Local') {
-    const ok = await db.prepare('SELECT 1 FROM equipe_unidades WHERE equipe_id = ? AND unidade_id = ?').bind(equipeId, u.uni ?? null).first();
-    if (!ok) return c.json({ erro: 'Esta equipe não atende a sua unidade.' }, 403);
-  }
+  if (!(await db.prepare('SELECT 1 FROM equipes WHERE id = ?').bind(equipeId).first())) return c.json({ erro: 'Equipe inexistente.' }, 400);
+  const un = await resolverUnidade(db, u, equipeId, b.unidade_id);
+  if (un.erro) return c.json({ erro: un.erro }, un.status);
   if (!(await podeEditarEspecialidade(db, u, d.especialidade)))
     return c.json({ erro: 'Você não tem permissão para cadastrar guias desta especialidade.' }, 403);
 
   try {
     const info = await db.prepare(`INSERT INTO guias (cpf_paciente, nome_paciente, especialidade, prioridade, data_emissao,
-      motivo_encaminhamento, modalidade, status, equipe_id) VALUES (?,?,?,?,?,?,?,?,?)`)
-      .bind(d.cpf_paciente, d.nome_paciente, d.especialidade, d.prioridade, d.data_emissao, d.motivo_encaminhamento, d.modalidade, ST.AGUARDANDO, equipeId).run();
+      motivo_encaminhamento, modalidade, status, equipe_id, unidade_id) VALUES (?,?,?,?,?,?,?,?,?,?)`)
+      .bind(d.cpf_paciente, d.nome_paciente, d.especialidade, d.prioridade, d.data_emissao, d.motivo_encaminhamento, d.modalidade, ST.AGUARDANDO, equipeId, un.id).run();
     const id = info.meta.last_row_id;
     await db.batch([
-      hist(db, id, u, null, ST.AGUARDANDO, 'Guia cadastrada', `Elegibilidade: ${d.modalidade}`),
+      hist(db, id, u, null, ST.AGUARDANDO, 'Guia cadastrada', `Elegibilidade: ${d.modalidade} · Unidade: ${un.nome}`),
       ...(et.ids?.length ? et.ids.map((e) => db.prepare('INSERT INTO guias_etiquetas (guia_id, etiqueta_id) VALUES (?, ?)').bind(id, e)) : []),
     ]);
     return c.json({ sucesso: true, id }, 201);
@@ -321,7 +351,7 @@ app.post('/api/guias', async (c) => {
 
 // Carrega a guia respeitando escopo e permissão de edição por especialidade
 async function guiaEditavel(c) {
-  const u = c.get('user'), db = c.env.DB_REGULACAO, id = Number(c.req.param('id')), s = escopo(u);
+  const u = c.get('user'), db = c.env.DB_REGULACAO, id = Number(c.req.param('id')), s = escopoGuias(u);
   const guia = Number.isInteger(id) ? await db.prepare(`SELECT * FROM guias WHERE id = ? AND ${s.sql}`).bind(id, ...s.p).first() : null;
   if (!guia) return { resp: c.json({ erro: 'Guia não encontrada.' }, 404) };
   if (!(await podeEditarEspecialidade(db, u, guia.especialidade)))
@@ -353,7 +383,7 @@ app.put('/api/guias/:id', async (c) => {
 
 // Acompanhamento: tentativas de contato, histórico e a situação da regra de arquivamento
 app.get('/api/guias/:id/acompanhamento', async (c) => {
-  const u = c.get('user'), db = c.env.DB_REGULACAO, id = Number(c.req.param('id')), s = escopo(u);
+  const u = c.get('user'), db = c.env.DB_REGULACAO, id = Number(c.req.param('id')), s = escopoGuias(u);
   const guia = Number.isInteger(id) ? await db.prepare(`SELECT * FROM guias WHERE id = ? AND ${s.sql}`).bind(id, ...s.p).first() : null;
   if (!guia) return c.json({ erro: 'Guia não encontrada.' }, 404);
   const gp = guia.status === ST.GRUPO ? await db.prepare(`SELECT gr.id, gr.nome, gr.profissional_id, (SELECT nome_completo FROM usuarios WHERE id = gr.profissional_id) AS profissional_nome
@@ -501,12 +531,12 @@ async function conflitoProfissional(db, profId, hs, ignorarId) {
 }
 
 app.get('/api/grupos', async (c) => {
-  const s = escopo(c.get('user')), db = c.env.DB_REGULACAO;
+  const s = escopo(c.get('user')), db = c.env.DB_REGULACAO, ru = soUnidade(c.get('user'));
   const sub = `SELECT id FROM grupos WHERE ${s.sql}`;
   const [g, h, n, us] = await Promise.all([
     db.prepare(`SELECT * FROM grupos WHERE ${s.sql} ORDER BY nome`).bind(...s.p).all(),
     db.prepare(`SELECT grupo_id, dia_semana, hora_inicio, hora_fim FROM grupo_horarios WHERE grupo_id IN (${sub}) ORDER BY ((dia_semana + 6) % 7), hora_inicio`).bind(...s.p).all(),
-    db.prepare(`SELECT gg.grupo_id, COUNT(*) AS n FROM grupo_guias gg JOIN guias g ON g.id = gg.guia_id WHERE g.status = ? AND gg.grupo_id IN (${sub}) GROUP BY gg.grupo_id`).bind(ST.GRUPO, ...s.p).all(),
+    db.prepare(`SELECT gg.grupo_id, COUNT(*) AS n FROM grupo_guias gg JOIN guias g ON g.id = gg.guia_id WHERE g.status = ? AND gg.grupo_id IN (${sub})${ru.sql} GROUP BY gg.grupo_id`).bind(ST.GRUPO, ...s.p, ...ru.p).all(),
     db.prepare(`SELECT id, nome_completo FROM usuarios WHERE id IN (SELECT profissional_id FROM grupos WHERE ${s.sql})`).bind(...s.p).all(),
   ]);
   return c.json(g.results.map((x) => ({
@@ -590,7 +620,7 @@ app.get('/api/grupos/:id/guias', async (c) => {
   const u = c.get('user'), db = c.env.DB_REGULACAO, g = await grupoVisivel(c);
   if (!g) return c.json({ erro: 'Grupo não encontrado.' }, 404);
   const { results } = await db.prepare(`SELECT g.id, g.nome_paciente, g.cpf_paciente, g.prioridade, gg.data_inclusao
-    FROM grupo_guias gg JOIN guias g ON g.id = gg.guia_id WHERE gg.grupo_id = ? AND g.status = ? ORDER BY g.prioridade, gg.data_inclusao`).bind(g.id, ST.GRUPO).all();
+    FROM grupo_guias gg JOIN guias g ON g.id = gg.guia_id WHERE gg.grupo_id = ? AND g.status = ?${soUnidade(u).sql} ORDER BY g.prioridade, gg.data_inclusao`).bind(g.id, ST.GRUPO, ...soUnidade(u).p).all();
   return c.json({ grupo: { id: g.id, nome: g.nome, status: g.status }, guias: results, pode_gerir: podeGerirGrupo(u, g) });
 });
 
